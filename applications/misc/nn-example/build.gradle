@@ -15,8 +15,5 @@ dependencies {
     compileOnly project(':api:api-neural-network')
     compileOnly project(':api:api-application-context')
 
-    //-- application context
-    compile project(':common:application-context')
-
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

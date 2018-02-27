@@ -16,3 +16,4 @@
 **/tasktemp
 **/data/
 gradlew*
+**/gradle-wrapper.*

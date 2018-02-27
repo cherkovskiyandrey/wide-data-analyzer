@@ -1,6 +1,6 @@
 package com.cherkovskiy.neuron_networks.mlp;
 
-import com.cherkovskiy.neuron_networks.api.NeuronNetworkOutput;
+
 import com.cherkovskiy.neuron_networks.api.NeuronNetworkDataSet;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.Range;
@@ -48,7 +48,7 @@ class StatisticsProvider {
                     STAT_LOGGER.debug(String.format("%d,%d => rate prev: %24.20f; rate cur: %24.20f; delta: %24.20f", i, j, ratePrev, rateCur, curDelta));
 
                     if (!Range.between(beginRange, endRange).contains(rateCur)) {
-                        STAT_LOGGER.warn(String.format("New value %24.20f is out of range: %24.20f <--> %24.20f", rateCur, beginRange, endRange));
+                        STAT_LOGGER.warn(String.format("New name %24.20f is out of range: %24.20f <--> %24.20f", rateCur, beginRange, endRange));
                     }
 
                     //by scan range

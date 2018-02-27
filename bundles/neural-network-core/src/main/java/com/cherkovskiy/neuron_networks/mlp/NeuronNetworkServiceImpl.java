@@ -1,8 +1,8 @@
 package com.cherkovskiy.neuron_networks.mlp;
 
-import com.cherkovskiy.application_context.api.ApplicationContext;
 import com.cherkovskiy.application_context.api.annotations.Service;
-import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
+import com.cherkovskiy.application_context.api.annotations.ServiceInject;
+import com.cherkovskiy.application_context.api.annotations.ServiceVersion;
 import com.cherkovskiy.comprehensive_serializer.api.SerializerService;
 import com.cherkovskiy.neuron_networks.api.*;
 
@@ -12,16 +12,25 @@ import javax.annotation.PreDestroy;
 
 
 @Service(
-        value = "mlp",
+        name = "mlp",
         type = Service.Type.SINGLETON,
         initType = Service.InitType.EAGER
 )
 public class NeuronNetworkServiceImpl implements NeuronNetworkService {
 
-    private final ApplicationContext applicationContext;
+    //private final ApplicationContext applicationContext;
 
-    public NeuronNetworkServiceImpl(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+//    public NeuronNetworkServiceImpl(ApplicationContext applicationContext) {
+//        this.applicationContext = applicationContext;
+//    }
+
+    private final SerializerService serializerService;
+
+    public NeuronNetworkServiceImpl(
+            @ServiceInject(
+                    name = "",
+                    version = @ServiceVersion(getMajor = 1, getMinor = 0, getSnapshot = "SNAPSHORT")) SerializerService serializerService) {
+        this.serializerService = serializerService;
     }
 
     @PostConstruct
@@ -35,11 +44,13 @@ public class NeuronNetworkServiceImpl implements NeuronNetworkService {
     @Nonnull
     @Override
     public NeuronNetworkBuilder createFeedforwardBuilder() {
-        try {
-            return new FeedforwardNeuronNetworkBuilderImpl(applicationContext.getService(SerializerService.class));
-        } catch (ServiceNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            return new FeedforwardNeuronNetworkBuilderImpl(applicationContext.getService(SerializerService.class));
+//        } catch (ServiceNotFoundException e) {
+//            throw new RuntimeException(e);
+//        }
+
+        return new FeedforwardNeuronNetworkBuilderImpl(serializerService);
     }
 
     @Nonnull
