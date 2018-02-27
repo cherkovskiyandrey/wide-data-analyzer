@@ -1,0 +1,19 @@
+rootProject.name = 'wide-data-analyzer'
+
+//------- API -----------------------
+include ':api:api-neural-network'
+include ':api:api-application-context'
+include ':api:api-comprehensive-serializer'
+
+
+//------ Common --------------------
+include ':common:application-context'
+
+
+//------ Bundles --------------------
+include ':bundles:neural-network-core'
+
+
+//----------- Applications-----------
+include ':appications:misc:nn-example'
+

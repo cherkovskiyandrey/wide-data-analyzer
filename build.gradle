@@ -1,0 +1,33 @@
+group 'com.cherkovskiy'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+allprojects {
+    repositories {
+		jcenter()
+        mavenCentral()
+    }
+	compileJava {
+		options.encoding = "UTF-8"
+	}	
+}
+
+//Does not work!
+//subprojects {
+//    dependencies {
+//        compile "com.google.guava:guava:23.1-jre"
+//        compile "commons-io:commons-io:2.5"
+//    }
+//}
+
+subprojects {
+    version = '1.0-SNAPSHOT'
+}
+
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}

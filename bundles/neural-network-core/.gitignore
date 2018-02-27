@@ -1,0 +1,18 @@
+# CVS ignore
+**/CVS/
+**/target/
+
+# Idea files
+**/*.iws
+**/*.ipr
+**/*.iml
+**/.idea
+**/.\#*
+
+*.log
+*.log.*
+**/*.log
+**/temp
+**/tasktemp
+**/data/
+gradlew*

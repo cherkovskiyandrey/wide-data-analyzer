@@ -1,0 +1,17 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+group 'com.cherkovskiy'
+version '1.0-SNAPSHOT'
+
+apply plugin: "java"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+compileJava {
+    options.encoding = "UTF-8"
+}
+
+dependencies {
+    compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+}

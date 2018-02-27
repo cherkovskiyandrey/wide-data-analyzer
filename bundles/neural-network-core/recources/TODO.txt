@@ -1,0 +1,38 @@
+
+
+
+//TODO: 4.3.5 Batch Size Selection
+Since we prefer large gradient estimation variance in the
+early stage of the training to quickly jump out of poor local optima and smaller
+variance at the later stage to settle down to the minimum, we can choose smaller
+minibatch size initially and large ones in the later stage. In speech recognition tasks,
+we have found that a better model can be learned if we use 64–256 samples in early
+stages and 1,024–8,096 samples in later stages. An even smaller batch size is preferred
+at the very initial stage when a deeper network is to be trained. The minibatch
+size may be automatically determined based on the gradient estimation variance.
+Alternatively, the batch size can be determined by searching on a small subset of
+samples in each epoch [8, 20].
+
+
+//TODO: 4.3.6 Sample Randomization
+
+
+//TODO: implement first of all!
+xor.learnResilientProp(neuronNetworkTrainSet);
+
+//TODO: реализовать алгоритм гибкого поиска оптимальной конфигурации: 5.7.1 Number of layers: Two or three may often do the job, but more are also used
+
+//TODO: think about how to escape from local minimums
+
+
+//TODO: for market predictions read this: Excursus: neural networks used for prediction
+//the key argument is function does not depends on previous values, but future expected.
+//also reheated information could be used (see In Great Britain, the heterogeneous onestep-ahead
+                                               prediction was successfully used to increase the accuracy of such predictions
+                                                                           to 76%: In addition to the time
+                                                                           series of the values indicators such as the
+                                                                           oil price in Rotterdam or the US national
+                                                                           debt were included)
+
+
+//TODO: URGENT: change topology presentation in memory, for instance: 7 level with 3000 neurons will consume 3.5 GB of memory!
