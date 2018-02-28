@@ -1,0 +1,10 @@
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile 'commons-io:commons-io:2.6'
+    compile 'com.google.guava:guava:23.6-jre'
+    testCompile 'junit:junit:4.12'
+}
