@@ -1,5 +1,3 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
 group 'com.cherkovskiy'
 version '1.0-SNAPSHOT'
 

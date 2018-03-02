@@ -18,18 +18,15 @@ import javax.annotation.PreDestroy;
 )
 public class NeuronNetworkServiceImpl implements NeuronNetworkService {
 
+    //TODO: or me can use like this
     //private final ApplicationContext applicationContext;
-
 //    public NeuronNetworkServiceImpl(ApplicationContext applicationContext) {
 //        this.applicationContext = applicationContext;
 //    }
 
     private final SerializerService serializerService;
 
-    public NeuronNetworkServiceImpl(
-            @ServiceInject(
-                    name = "",
-                    version = @ServiceVersion(getMajor = 1, getMinor = 0, getSnapshot = "SNAPSHORT")) SerializerService serializerService) {
+    public NeuronNetworkServiceImpl(@ServiceInject SerializerService serializerService) {
         this.serializerService = serializerService;
     }
 

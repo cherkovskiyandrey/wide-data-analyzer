@@ -69,10 +69,6 @@ public class BundlePreparation implements Plugin<Project> {
         //--------------------------- Change Manifest after jar --------------------------
 
         project.getTasks().withType(Jar.class).forEach(jar -> {
-
-            System.out.println(jar.getTaskActions());
-
-
             jar.doLast(task -> {
                 final Jar jarTask = (Jar) task;
 

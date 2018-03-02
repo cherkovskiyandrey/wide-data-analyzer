@@ -1,6 +1,6 @@
 package com.cherkovskiy.application_context.api;
 
-public interface ServiceVersion {
+public interface BundleVersion {
 
     int getMajor();
 
