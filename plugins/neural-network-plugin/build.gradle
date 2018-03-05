@@ -1,9 +1,28 @@
+group 'com.cherkovskiy.plugin'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'java'
+//Does not work
+//apply plugin: 'java-library-distribution'
+//
+//
+//distributions {
+//    main{
+//        baseName = 'neural-network-plugin'
+//    }
+//}
 
-sourceCompatibility = 1.8
+//Does not work
+//apply plugin: 'distribution'
+
+//Work but not appropriated.
+//apply plugin: 'application'
+//mainClassName = "org.gradle.sample.Main"
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    //To export api
+    api project(':bundles:neural-network-core')
+
+    //To implementation
+    implementation project(':bundles:comprehensive-serializer')
 }

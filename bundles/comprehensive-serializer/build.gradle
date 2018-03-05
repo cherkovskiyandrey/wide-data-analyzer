@@ -1,7 +1,10 @@
-group 'com.cherkovskiy.api'
+group 'com.cherkovskiy.bundle'
 version '1.0-SNAPSHOT'
 
-
 dependencies {
+
+    //To expose
+    api project (':api:api-comprehensive-serializer')
+
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

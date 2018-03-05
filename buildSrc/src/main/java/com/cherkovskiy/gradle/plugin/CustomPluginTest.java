@@ -5,6 +5,7 @@ import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ResolvedDependency;
 import org.gradle.jvm.tasks.Jar;
 
@@ -76,16 +77,12 @@ public class CustomPluginTest implements Plugin<Project> {
                 final Jar jarTask = (Jar) task;
 
                 //ok
-                System.out.println(project.getConfigurations().getByName("compile").getResolvedConfiguration().getFirstLevelModuleDependencies().size());
-                System.out.println(project.getConfigurations().getByName("compileOnly").getIncoming().getResolutionResult().getAllDependencies().size());
-
-
-                System.out.println("compile:");
-                for (ResolvedDependency resolvedDependency : project.getConfigurations().getByName("compile").getResolvedConfiguration().getFirstLevelModuleDependencies()) {
-                    printDependency(resolvedDependency, 0);
+                System.out.println("api:");
+                for (Dependency dependency : project.getConfigurations().getByName("api").getDependencies()) {
+                    System.out.println(String.join(":", dependency.getGroup(), dependency.getName(), dependency.getVersion()));
                 }
-                System.out.println("compileOnly:");
-                for (ResolvedDependency resolvedDependency : project.getConfigurations().getByName("compileOnly").getResolvedConfiguration().getFirstLevelModuleDependencies()) {
+                System.out.println("runtimeClasspath:");
+                for (ResolvedDependency resolvedDependency : project.getConfigurations().getByName("runtimeClasspath").getResolvedConfiguration().getFirstLevelModuleDependencies()) {
                     printDependency(resolvedDependency, 0);
                 }
 
@@ -104,8 +101,8 @@ public class CustomPluginTest implements Plugin<Project> {
         System.out.println(blankets(i) + resolvedDependency.getModule().getId().getGroup() + ":" +
                 resolvedDependency.getModule().getId().getName() + ":" +
                 resolvedDependency.getModule().getId().getVersion()
-//                + ":" +
-//                resolvedDependency.getModuleArtifacts().iterator().next().getFile()
+                + "     =>      " +
+                resolvedDependency.getModuleArtifacts().iterator().next().getFile()
         );
         if(!resolvedDependency.getChildren().isEmpty()) {
             System.out.println(blankets(i) + "dependencies: [");

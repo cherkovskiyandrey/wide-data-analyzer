@@ -2,7 +2,6 @@ package com.cherkovskiy.neuron_networks.mlp;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.application_context.api.annotations.ServiceInject;
-import com.cherkovskiy.application_context.api.annotations.ServiceVersion;
 import com.cherkovskiy.comprehensive_serializer.api.SerializerService;
 import com.cherkovskiy.neuron_networks.api.*;
 

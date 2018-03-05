@@ -1,3 +1,4 @@
+enableFeaturePreview('IMPROVED_POM_SUPPORT')
 rootProject.name = 'wide-data-analyzer'
 
 //------- API -----------------------
@@ -23,4 +24,6 @@ include ':plugins:neural-network-plugin'
 include ':applications:misc:nn-example'
 include ':common:application-context-common'
 include ':plugins:neural-network-plugin'
+include 'bundles:comprehensive-serializer'
+findProject(':bundles:comprehensive-serializer')?.name = 'comprehensive-serializer'
 

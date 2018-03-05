@@ -1,35 +1,29 @@
-group 'com.cherkovskiy'
+group 'com.cherkovskiy.bundle'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'java'
 apply plugin: 'CustomPluginTest'
 //apply plugin: 'BundlePackager' // the plugin obligatory for each bundle
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-compileJava {
-    options.encoding = "UTF-8"
-}
-
 dependencies {
 
-    //-- api
-    compileOnly project(':api:api-neural-network')
-    compileOnly project(':api:api-application-context')
-    compileOnly project(':api:api-comprehensive-serializer')
+    //-- api to expose ----
+    api project(':api:api-neural-network')
+
+
+    //api to implementation -----
+    implementation project(':api:api-application-context')
+    implementation project(':api:api-comprehensive-serializer')
 
     //----- Common dependencies
-    compile project(':common:application-context-common')
+    implementation project(':common:application-context-common')
 
     //------ 3-rd path dependencies
-    //TODO: gather to lib folder (how - think...)
-    compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
-    compile group: 'log4j', name: 'log4j', version: '1.2.17'
-    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-    compile 'com.google.guava:guava:23.6-jre'
-    compile 'commons-io:commons-io:2.5'
+    implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+    implementation group: 'log4j', name: 'log4j', version: '1.2.17'
+    implementation group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.25'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    implementation 'com.google.guava:guava:23.6-jre'
+    implementation 'commons-io:commons-io:2.5'
 
-    compile "org.apache.commons:commons-lang3:3.7"
+    implementation "org.apache.commons:commons-lang3:3.7"
 }

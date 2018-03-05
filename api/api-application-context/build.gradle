@@ -1,13 +1,8 @@
-group 'com.cherkovskiy'
+group 'com.cherkovskiy.api'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'java'
-
-sourceCompatibility = 1.8
-
-
 dependencies {
-    compile 'com.google.code.findbugs:jsr305:3.0.2'
+    api 'com.google.code.findbugs:jsr305:3.0.2'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
