@@ -81,8 +81,8 @@ public class CustomPluginTest implements Plugin<Project> {
                 for (Dependency dependency : project.getConfigurations().getByName("api").getDependencies()) {
                     System.out.println(String.join(":", dependency.getGroup(), dependency.getName(), dependency.getVersion()));
                 }
-                System.out.println("runtimeClasspath:");
-                for (ResolvedDependency resolvedDependency : project.getConfigurations().getByName("runtimeClasspath").getResolvedConfiguration().getFirstLevelModuleDependencies()) {
+                System.out.println("compileClasspath:");
+                for (ResolvedDependency resolvedDependency : project.getConfigurations().getByName("compileClasspath").getResolvedConfiguration().getFirstLevelModuleDependencies()) {
                     printDependency(resolvedDependency, 0);
                 }
 

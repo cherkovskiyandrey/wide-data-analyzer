@@ -1,8 +1,8 @@
 group 'com.cherkovskiy.bundle'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'CustomPluginTest'
-//apply plugin: 'BundlePackager' // the plugin obligatory for each bundle
+//apply plugin: 'CustomPluginTest'
+apply plugin: 'BundlePackager' // the plugin obligatory for each bundle
 
 dependencies {
 
