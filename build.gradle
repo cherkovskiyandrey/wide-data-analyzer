@@ -12,7 +12,7 @@ allprojects {
     }
 	compileJava {
 		options.encoding = "UTF-8"
-	}	
+	}
 }
 
 //Does not work!
@@ -22,6 +22,14 @@ allprojects {
 //        compile "commons-io:commons-io:2.5"
 //    }
 //}
+
+subprojects {
+    task showMeCache {
+        doLast {configurations.compile.each { println it }}
+    }
+}
+
+
 
 subprojects {
     version = '1.0-SNAPSHOT'

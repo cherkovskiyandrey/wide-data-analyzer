@@ -5,15 +5,22 @@ include ':api:api-neural-network'
 include ':api:api-application-context'
 include ':api:api-comprehensive-serializer'
 
-//------ Common --------------------
+//------ Core --------------------
+include ':core:application-context'
+include ':core:application-starter'
 
+//------ Common --------------------
+include ':common:application-context-common'
 
 //------ Bundles --------------------
-include ':bundles:application-context'
 include ':bundles:neural-network-core'
 
 
+//------ Plugins --------------------
+include ':plugins:neural-network-plugin'
+
 //----------- Applications-----------
-include ':applications:application-starter'
 include ':applications:misc:nn-example'
+include ':common:application-context-common'
+include ':plugins:neural-network-plugin'
 

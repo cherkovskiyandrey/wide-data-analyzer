@@ -47,7 +47,7 @@ public class NeuronNetworkServiceImpl implements NeuronNetworkService {
 //            throw new RuntimeException(e);
 //        }
 
-        return new FeedforwardNeuronNetworkBuilderImpl(serializerService);
+        return new FeedforwardNeuronNetworkBuilderImpl();
     }
 
     @Nonnull

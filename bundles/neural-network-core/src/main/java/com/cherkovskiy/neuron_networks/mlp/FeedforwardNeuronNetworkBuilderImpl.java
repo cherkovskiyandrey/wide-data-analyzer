@@ -1,7 +1,12 @@
 package com.cherkovskiy.neuron_networks.mlp;
 
+import com.cherkovskiy.application_context.ApplicationContextHolder;
+import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
 import com.cherkovskiy.comprehensive_serializer.api.SerializerService;
-import com.cherkovskiy.neuron_networks.api.*;
+import com.cherkovskiy.neuron_networks.api.ActivationFunction;
+import com.cherkovskiy.neuron_networks.api.BasicActivationFunction;
+import com.cherkovskiy.neuron_networks.api.NeuronNetwork;
+import com.cherkovskiy.neuron_networks.api.NeuronNetworkBuilder;
 import com.cherkovskiy.neuron_networks.core.activationFunctions.StandardActivationFunctions;
 
 import java.io.*;
@@ -21,8 +26,12 @@ public class FeedforwardNeuronNetworkBuilderImpl implements NeuronNetworkBuilder
     private LinkedList<Integer> hiddenLevels = new LinkedList<>();
     private int output;
 
-    public FeedforwardNeuronNetworkBuilderImpl(SerializerService serializerService) {
-        this.serializerService = serializerService;
+    public FeedforwardNeuronNetworkBuilderImpl() {
+        try {
+            this.serializerService = ApplicationContextHolder.currentContext().getService(SerializerService.class);
+        } catch (ServiceNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     //TODO: move to LearnBuilder
@@ -97,7 +106,7 @@ public class FeedforwardNeuronNetworkBuilderImpl implements NeuronNetworkBuilder
 //        return this;
 //    }
 
-    public NeuronNetwork build() {
+    public NeuronNetwork build() throws ServiceNotFoundException {
         int allNeurons = input + hiddenLevels.stream().mapToInt(Integer::intValue).sum() + output;
         final double[][] topology = NeuronNetworkCoreHelper.nanArray(allNeurons, allNeurons);
         int levelBegin = 0;
@@ -113,11 +122,11 @@ public class FeedforwardNeuronNetworkBuilderImpl implements NeuronNetworkBuilder
             levelEnd = levelEnd + levelAmount;
         }
 
-        return new FeedforwardNeuronNetworkImpl(input, topology, output, activationFunction, serializerService);
+        return new FeedforwardNeuronNetworkImpl(input, topology, output, activationFunction);
     }
 
     @Override
-    public NeuronNetwork build(InputStream from) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public NeuronNetwork build(InputStream from) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, ServiceNotFoundException {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(from, StandardCharsets.UTF_8));
 
         final String type = reader.readLine();
@@ -156,7 +165,7 @@ public class FeedforwardNeuronNetworkBuilderImpl implements NeuronNetworkBuilder
                     });
         }
 
-        return new FeedforwardNeuronNetworkImpl(input, topology, output, activationFunction, serializerService);
+        return new FeedforwardNeuronNetworkImpl(input, topology, output, activationFunction);
     }
 
 

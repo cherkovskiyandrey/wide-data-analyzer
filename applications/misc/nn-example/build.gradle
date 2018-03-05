@@ -12,8 +12,14 @@ compileJava {
 dependencies {
 
     //-- api
-    compileOnly project(':api:api-neural-network')
-    compileOnly project(':api:api-application-context')
+    compile project(':api:api-neural-network')
+    compile project(':api:api-application-context')
+
+    //TODO: перечисляем бандлы коры приложения без плагинов
+
+
+    //И обязательно стартер
+    compile project(':core:application-starter')
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

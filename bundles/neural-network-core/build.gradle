@@ -1,8 +1,9 @@
 group 'com.cherkovskiy'
 version '1.0-SNAPSHOT'
 
-apply plugin: "java"
-apply plugin: "BundlePreparation" // the plugin obligatory for each bundle
+apply plugin: 'java'
+apply plugin: 'CustomPluginTest'
+//apply plugin: 'BundlePackager' // the plugin obligatory for each bundle
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -19,6 +20,7 @@ dependencies {
     compileOnly project(':api:api-comprehensive-serializer')
 
     //----- Common dependencies
+    compile project(':common:application-context-common')
 
     //------ 3-rd path dependencies
     //TODO: gather to lib folder (how - think...)

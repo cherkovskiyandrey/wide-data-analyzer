@@ -1,5 +1,7 @@
 package com.cherkovskiy.neuron_networks.api;
 
+import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -22,7 +24,7 @@ public interface NeuronNetworkBuilder {
      *
      * @return
      */
-    NeuronNetwork build();
+    NeuronNetwork build() throws ServiceNotFoundException;
 
     /**
      * Build {@link NeuronNetwork} from xml file.
@@ -31,5 +33,5 @@ public interface NeuronNetworkBuilder {
      * @param from
      * @return
      */
-    NeuronNetwork build(InputStream from) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException;
+    NeuronNetwork build(InputStream from) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, ServiceNotFoundException;
 }

@@ -1,7 +1,7 @@
 package com.cherkovskiy.neuron_networks.api;
 
 
-//TODO: как миниум убрать бизнес логику
+//TODO: избавиться от кода
 public enum DebugLevels {
     TRACE(0) {
         @Override

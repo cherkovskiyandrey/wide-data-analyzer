@@ -2,6 +2,7 @@ package com.cherkovskiy.neuron_networks;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.application_context.api.annotations.ServiceInject;
+import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
 import com.cherkovskiy.neuron_networks.api.*;
 
 import javax.annotation.PostConstruct;
@@ -24,7 +25,7 @@ public class NNExample {
     }
 
     @PostConstruct
-    void run() throws IOException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+    void run() throws IOException, ClassNotFoundException, IllegalAccessException, InstantiationException, ServiceNotFoundException {
         //1. Create empty (random initialised) NN
         final NeuronNetwork neuronNetwork = neuronNetworkService.createFeedforwardBuilder()
 

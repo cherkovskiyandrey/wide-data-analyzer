@@ -5,6 +5,7 @@ import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.ResolvedDependency;
 import org.gradle.jvm.tasks.Jar;
 
 import java.io.ByteArrayOutputStream;
@@ -18,8 +19,10 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-public class BundlePreparation implements Plugin<Project> {
+public class CustomPluginTest implements Plugin<Project> {
     private final static String TASK_NAME = "rebuildManifest";
     private final static String AFTER_TASK_NAME = "jar";
 
@@ -76,15 +79,47 @@ public class BundlePreparation implements Plugin<Project> {
                 System.out.println(project.getConfigurations().getByName("compile").getResolvedConfiguration().getFirstLevelModuleDependencies().size());
                 System.out.println(project.getConfigurations().getByName("compileOnly").getIncoming().getResolutionResult().getAllDependencies().size());
 
+
+                System.out.println("compile:");
+                for (ResolvedDependency resolvedDependency : project.getConfigurations().getByName("compile").getResolvedConfiguration().getFirstLevelModuleDependencies()) {
+                    printDependency(resolvedDependency, 0);
+                }
+                System.out.println("compileOnly:");
+                for (ResolvedDependency resolvedDependency : project.getConfigurations().getByName("compileOnly").getResolvedConfiguration().getFirstLevelModuleDependencies()) {
+                    printDependency(resolvedDependency, 0);
+                }
+
+                //TODO: запрещать ипортировать другие бандлы, плагины и приложения
+
                 // repackage
                 final Map<String, String> extraAttributes = Maps.newHashMap();
                 addToManifest(jarTask.getArchivePath(), extraAttributes);
 
             });
         });
-
-
     }
+
+
+    private void printDependency(ResolvedDependency resolvedDependency, int i) {
+        System.out.println(blankets(i) + resolvedDependency.getModule().getId().getGroup() + ":" +
+                resolvedDependency.getModule().getId().getName() + ":" +
+                resolvedDependency.getModule().getId().getVersion()
+//                + ":" +
+//                resolvedDependency.getModuleArtifacts().iterator().next().getFile()
+        );
+        if(!resolvedDependency.getChildren().isEmpty()) {
+            System.out.println(blankets(i) + "dependencies: [");
+        }
+        resolvedDependency.getChildren().forEach(resolvedDependency1 -> printDependency(resolvedDependency1, i + 1));
+        if(!resolvedDependency.getChildren().isEmpty()) {
+            System.out.println(blankets(i) + "]");
+        }
+    }
+
+    private String blankets(int nums) {
+        return IntStream.range(0, nums).mapToObj(i -> "\t").collect(Collectors.joining(""));
+    }
+
 
     private void addToManifest(File archivePath, Map<String, String> extraAttributes) {
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024)) {

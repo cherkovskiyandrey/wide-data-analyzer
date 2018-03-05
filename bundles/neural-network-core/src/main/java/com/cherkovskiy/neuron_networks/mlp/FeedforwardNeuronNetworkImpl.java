@@ -1,5 +1,7 @@
 package com.cherkovskiy.neuron_networks.mlp;
 
+import com.cherkovskiy.application_context.ApplicationContextHolder;
+import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
 import com.cherkovskiy.comprehensive_serializer.api.SerializerService;
 import com.cherkovskiy.neuron_networks.api.ActivationFunction;
 import com.cherkovskiy.neuron_networks.api.NeuronNetwork;
@@ -22,12 +24,12 @@ class FeedforwardNeuronNetworkImpl implements NeuronNetwork, Cloneable {
     private final int outputAmount;
     private final SerializerService serializerService;
 
-    FeedforwardNeuronNetworkImpl(int inputAmount, double[][] topology, int outputAmount, ActivationFunction activationFunction, SerializerService serializerService) {
+    FeedforwardNeuronNetworkImpl(int inputAmount, double[][] topology, int outputAmount, ActivationFunction activationFunction) throws ServiceNotFoundException {
         this.activationFunction = activationFunction;
         this.inputAmount = inputAmount;
         this.topology = topology;
         this.outputAmount = outputAmount;
-        this.serializerService = serializerService;
+        this.serializerService = ApplicationContextHolder.currentContext().getService(SerializerService.class);
     }
 
     public ActivationFunction getActivationFunction() {
