@@ -6,16 +6,28 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+// Add to source api-application-context sources, because gradle can't depends on outside projects,
+// and gradle plugin must be compiled before running root project build script. (*)
+sourceSets {
+    main {
+        java {
+            srcDirs '../api/api-application-context/src'
+        }
+    }
+}
+
+
 compileJava {
     options.encoding = "UTF-8"
 }
 
 dependencies {
 
-    //TODO: так нельзя! Видимо нужновыносить как отдельный проект????
-    //compile project(':api:api-application-context')
+    // For the same reasons as: (*), but only for Idea. Idea can't see extra sources, but dependency like this - do. (gradle vice versa :-))
+    compile fileTree(dir: '../api/api-application-context/src/main/java/', include: '**/*.java')
 
     compile 'commons-io:commons-io:2.6'
+    compile 'org.apache.commons:commons-lang3:3.7'
     compile 'com.google.guava:guava:23.6-jre'
     compile 'org.slieb:throwable-interfaces:1.13'
 }

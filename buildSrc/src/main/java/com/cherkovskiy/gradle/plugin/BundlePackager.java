@@ -1,7 +1,9 @@
 package com.cherkovskiy.gradle.plugin;
 
+import com.cherkovskiy.application_context.api.annotations.Service;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -14,7 +16,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -85,27 +86,21 @@ public class BundlePackager implements Plugin<Project> {
         final URL[] jars = Stream.concat(Stream.of(rootArtifactFile), dependencies.stream())
                 .map(FunctionWithThrowable.castFunctionWithThrowable(jar -> jar.toURI().normalize().toURL()))
                 .toArray(URL[]::new);
-        final URLClassLoader classLoader = new URLClassLoader(jars);
+
+        // We use parent class loader because this plugin uses outside sources.
+        // URLClassLoader has to load Service class from current loader.
+        final URLClassLoader classLoader = new URLClassLoader(jars, Thread.currentThread().getContextClassLoader());
 
         try {
-
-            //TODO: времменое решение. потом нужно всё-таки иметь возможность подлкючать проект с API !!!
-            //---------------
-            Class<? extends Annotation> serviceAnnotation = (Class<? extends Annotation>) Class.forName(
-                    "com.cherkovskiy.application_context.api.annotations.Service",
-                    true,
-                    classLoader);
-            //---------------
-
             return getAllClassesName(rootArtifactFile).stream()
                     .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
-                    .filter(cls -> cls.isAnnotationPresent(serviceAnnotation))
+                    .filter(cls -> cls.isAnnotationPresent(Service.class))
                     .peek(this::checkRestrictions)
                     .map(cls -> toServiceDescription(cls, classLoader))
                     .collect(Collectors.toList());
 
 
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
             throw new GradleException(e.getMessage(), e);
         }
     }
@@ -133,11 +128,29 @@ public class BundlePackager implements Plugin<Project> {
 
     private ServiceDescription toServiceDescription(Class<?> cls, URLClassLoader classLoader) {
         final List<Class<?>> implInterfaces = Lists.newArrayList();
-        walkAllInterfaces(cls, implInterfaces);
+        walkClass(cls, implInterfaces);
 
-        //TODO: read Service annotation parameters and use them
+        final Service service = cls.getAnnotation(Service.class);
+        final String name = StringUtils.isNotBlank(service.value()) ? service.value() :
+                StringUtils.isNotBlank(service.name()) ? service.name() : "";
 
-        return new ServiceDescription(cls, implInterfaces);
+        final Service.Type type = service.type();
+        final Service.InitType initType = service.initType();
+
+        return ServiceDescription.builder()
+                .setServiceImplName(cls.getName())
+                .setServiceName(name)
+                .setType(type)
+                .setInitType(initType)
+                .setInterfaces(implInterfaces.stream().map(Class::getName).collect(Collectors.toList()))
+                .build();
+    }
+
+    private void walkClass(Class<?> cls, List<Class<?>> implInterfaces) {
+        if (!Object.class.equals(cls)) {
+            walkAllInterfaces(cls, implInterfaces);
+            walkClass(cls.getSuperclass(), implInterfaces);
+        }
     }
 
     private void walkAllInterfaces(Class<?> cls, List<Class<?>> implInterfaces) {
@@ -167,7 +180,7 @@ public class BundlePackager implements Plugin<Project> {
                 attributes.put(new Attributes.Name(BUNDLE_VERSION), bundleVersion);
 
                 final String services = serviceDescriptions.stream()
-                        .flatMap(sd -> sd.serviceToInterface().stream())
+                        .map(ServiceDescription::toManifestCompatibleString)
                         .collect(Collectors.joining(";"));
 
                 attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
