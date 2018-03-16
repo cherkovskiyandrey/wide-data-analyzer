@@ -86,11 +86,11 @@ public class CustomPluginTest implements Plugin<Project> {
                     printDependency(resolvedDependency, 0);
                 }
 
-                //TODO: запрещать ипортировать другие бандлы, плагины и приложения
-
-                // repackage
-                final Map<String, String> extraAttributes = Maps.newHashMap();
-                addToManifest(jarTask.getArchivePath(), extraAttributes);
+//                //TODO: запрещать ипортировать другие бандлы, плагины и приложения
+//
+//                // repackage
+//                final Map<String, String> extraAttributes = Maps.newHashMap();
+//                addToManifest(jarTask.getArchivePath(), extraAttributes);
 
             });
         });

@@ -6,24 +6,26 @@ include ':api:api-neural-network'
 include ':api:api-application-context'
 include ':api:api-comprehensive-serializer'
 
+
 //------ Core --------------------
 include ':core:application-context'
 include ':core:application-starter'
 
+
 //------ Common --------------------
 include ':common:application-context-common'
 
+
 //------ Bundles --------------------
 include ':bundles:neural-network-core'
+include ':bundles:comprehensive-serializer'
 
 
 //------ Plugins --------------------
 include ':plugins:neural-network-plugin'
 
+
 //----------- Applications-----------
 include ':applications:misc:nn-example'
-include ':common:application-context-common'
-include ':plugins:neural-network-plugin'
-include 'bundles:comprehensive-serializer'
-findProject(':bundles:comprehensive-serializer')?.name = 'comprehensive-serializer'
+
 

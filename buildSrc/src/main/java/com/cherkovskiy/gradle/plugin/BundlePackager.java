@@ -1,6 +1,7 @@
 package com.cherkovskiy.gradle.plugin;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +38,13 @@ public class BundlePackager implements Plugin<Project> {
     private final static String EXPORTED_SERVICES = "EXPORTED_SERVICES";
     private static final String MANIFEST_ENTRY_NAME = "META-INF/MANIFEST.MF";
 
+    private static final ImmutableList<String> FORBIDDEN_TO_DEPENDS_ON_LIST = new ImmutableList.Builder<String>()
+            .add("application")
+            .add("bundle")
+            .add("core")
+            .add("plugin")
+            .build();
+
     @Override
     public void apply(@Nonnull Project project) {
         project.getTasks().withType(Jar.class).forEach(jar -> {
@@ -44,14 +52,38 @@ public class BundlePackager implements Plugin<Project> {
                 final Jar jarTask = (Jar) task;
 
                 final String rootGroupName = lookUpRootGroupName(project);
-                //TODO: запрещать ипортировать другие бандлы, плагины и приложения
+                final List<DependencyHolder> dependencies = getCompileDependencies(project);
 
-                final List<File> dependencies = getCompileDependencies(project);
+                checkImportRestrictions(rootGroupName, dependencies);
 
                 final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), dependencies);
                 addToManifest(jarTask.getArchivePath(), jarTask.getBaseName(), jarTask.getVersion(), serviceDescriptions);
             });
         });
+    }
+
+    private void checkImportRestrictions(@Nonnull String rootGroupName, @Nonnull List<DependencyHolder> dependencies) {
+        final List<DependencyHolder> forbiddenDependencies = dependencies.stream()
+                .filter(dep -> {
+                    final String group = dep.getGroup();
+
+                    if (StringUtils.startsWith(group, rootGroupName)) {
+                        final String subGroup = StringUtils.split(group.substring(rootGroupName.length()), '.')[0];
+
+                        if (FORBIDDEN_TO_DEPENDS_ON_LIST.stream().anyMatch(frb -> frb.equalsIgnoreCase(subGroup))) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+
+        if (!forbiddenDependencies.isEmpty()) {
+            throw new GradleException(String.format("Bundle could not depends on: %s. There is forbidden dependencies: %s",
+                    FORBIDDEN_TO_DEPENDS_ON_LIST.stream().collect(Collectors.joining(", ")),
+                    forbiddenDependencies.stream().map(DependencyHolder::toString).collect(Collectors.joining(", "))
+            ));
+        }
     }
 
 
@@ -63,27 +95,31 @@ public class BundlePackager implements Plugin<Project> {
         }
     }
 
-
-    private List<File> getCompileDependencies(Project project) {
-        final List<File> dependencies = Lists.newArrayList();
+    private List<DependencyHolder> getCompileDependencies(Project project) {
+        final List<DependencyHolder> dependencies = Lists.newArrayList();
         for (ResolvedDependency resolvedDependency : project.getConfigurations()
                 .getByName("compileClasspath")
                 .getResolvedConfiguration()
                 .getFirstLevelModuleDependencies()) {
 
-            walkDependency(resolvedDependency, dependencies);
+            walkDependency(resolvedDependency, dependencies, null);
         }
         return dependencies;
     }
 
-    private void walkDependency(ResolvedDependency resolvedDependency, List<File> dependencies) {
-        dependencies.add(resolvedDependency.getModuleArtifacts().iterator().next().getFile());
-        resolvedDependency.getChildren().forEach(childDependency -> walkDependency(childDependency, dependencies));
+    private void walkDependency(ResolvedDependency resolvedDependency, List<DependencyHolder> dependencies, DependencyHolder parent) {
+        final DependencyHolder holder = new DependencyHolder(
+                resolvedDependency.getModule(),
+                resolvedDependency.getModuleArtifacts().iterator().next().getFile(),
+                parent);
+
+        dependencies.add(holder);
+        resolvedDependency.getChildren().forEach(childDependency -> walkDependency(childDependency, dependencies, holder));
     }
 
 
-    private List<ServiceDescription> extractAllServicesFrom(File rootArtifactFile, List<File> dependencies) {
-        final URL[] jars = Stream.concat(Stream.of(rootArtifactFile), dependencies.stream())
+    private List<ServiceDescription> extractAllServicesFrom(File rootArtifactFile, List<DependencyHolder> dependencies) {
+        final URL[] jars = Stream.concat(Stream.of(rootArtifactFile), dependencies.stream().map(DependencyHolder::getFile))
                 .map(FunctionWithThrowable.castFunctionWithThrowable(jar -> jar.toURI().normalize().toURL()))
                 .toArray(URL[]::new);
 
@@ -95,7 +131,7 @@ public class BundlePackager implements Plugin<Project> {
             return getAllClassesName(rootArtifactFile).stream()
                     .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
                     .filter(cls -> cls.isAnnotationPresent(Service.class))
-                    .peek(this::checkRestrictions)
+                    .peek(this::checkClassRestrictions)
                     .map(cls -> toServiceDescription(cls, classLoader))
                     .collect(Collectors.toList());
 
@@ -105,7 +141,7 @@ public class BundlePackager implements Plugin<Project> {
         }
     }
 
-    private void checkRestrictions(Class<?> cls) {
+    private void checkClassRestrictions(Class<?> cls) {
         if (cls.isLocalClass()) {
             throw new GradleException("Local class could not be service!");
         }

@@ -9,7 +9,6 @@ dependencies {
     //-- api to expose ----
     api project(':api:api-neural-network')
 
-
     //api to implementation -----
     implementation project(':api:api-application-context')
     implementation project(':api:api-comprehensive-serializer')
