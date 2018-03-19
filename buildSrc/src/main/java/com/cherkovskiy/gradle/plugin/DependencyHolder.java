@@ -23,7 +23,6 @@ class DependencyHolder {
         return module.getId().getGroup();
     }
 
-
     @Override
     public String toString() {
         final StringBuilder result = new StringBuilder();
@@ -32,7 +31,7 @@ class DependencyHolder {
         result.append(module.getId().getName()).append(":");
         result.append(module.getId().getVersion());
 
-        if(parent != null) {
+        if (parent != null) {
             result.append(" <- ").append(parent.toString());
         }
 

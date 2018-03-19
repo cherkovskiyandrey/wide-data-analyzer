@@ -18,8 +18,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
@@ -29,14 +27,16 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 public class BundlePackager implements Plugin<Project> {
-    private final static String BUNDLE_NAME = "BUNDLE_NAME";
-    private final static String BUNDLE_VERSION = "BUNDLE_VERSION";
-    private final static String EXPORTED_SERVICES = "EXPORTED_SERVICES";
+    private static final String BUNDLE_NAME = "BUNDLE_NAME";
+    private static final String BUNDLE_VERSION = "BUNDLE_VERSION";
+    private static final String EXPORTED_SERVICES = "EXPORTED_SERVICES";
     private static final String MANIFEST_ENTRY_NAME = "META-INF/MANIFEST.MF";
+
+    private static final String FULL_RUNTIME_DEPENDENCY_TYPE = "compileClasspath";
+    private static final String ADI_DEPENDENCY_GROUP = "api";
 
     private static final ImmutableList<String> FORBIDDEN_TO_DEPENDS_ON_LIST = new ImmutableList.Builder<String>()
             .add("application")
@@ -49,6 +49,9 @@ public class BundlePackager implements Plugin<Project> {
     public void apply(@Nonnull Project project) {
         project.getTasks().withType(Jar.class).forEach(jar -> {
             jar.doLast(task -> {
+
+                //TODO: FunctionWithThrowable.castFunctionWithThrowable развернуть
+
                 final Jar jarTask = (Jar) task;
 
                 final String rootGroupName = lookUpRootGroupName(project);
@@ -56,7 +59,7 @@ public class BundlePackager implements Plugin<Project> {
 
                 checkImportRestrictions(rootGroupName, dependencies);
 
-                final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), dependencies);
+                final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), dependencies);
                 addToManifest(jarTask.getArchivePath(), jarTask.getBaseName(), jarTask.getVersion(), serviceDescriptions);
             });
         });
@@ -88,17 +91,15 @@ public class BundlePackager implements Plugin<Project> {
 
 
     private String lookUpRootGroupName(Project project) {
-        for (Project parent = project; ; parent = parent.getParent()) {
-            if (parent.getParent() == null) {
-                return (String) parent.getGroup();
-            }
+        for (; project.getParent() != null; project = project.getParent()) {
         }
+        return (String) project.getGroup();
     }
 
     private List<DependencyHolder> getCompileDependencies(Project project) {
         final List<DependencyHolder> dependencies = Lists.newArrayList();
         for (ResolvedDependency resolvedDependency : project.getConfigurations()
-                .getByName("compileClasspath")
+                .getByName(FULL_RUNTIME_DEPENDENCY_TYPE)
                 .getResolvedConfiguration()
                 .getFirstLevelModuleDependencies()) {
 
@@ -118,21 +119,17 @@ public class BundlePackager implements Plugin<Project> {
     }
 
 
-    private List<ServiceDescription> extractAllServicesFrom(File rootArtifactFile, List<DependencyHolder> dependencies) {
-        final URL[] jars = Stream.concat(Stream.of(rootArtifactFile), dependencies.stream().map(DependencyHolder::getFile))
-                .map(FunctionWithThrowable.castFunctionWithThrowable(jar -> jar.toURI().normalize().toURL()))
-                .toArray(URL[]::new);
-
-        // We use parent class loader because this plugin uses outside sources.
+    private List<ServiceDescription> extractAllServicesFrom(String rootGroupName, File rootArtifactFile, List<DependencyHolder> dependencies) {
+        // We use parent class loader because this plugin uses outside api sources.
         // URLClassLoader has to load Service class from current loader.
-        final URLClassLoader classLoader = new URLClassLoader(jars, Thread.currentThread().getContextClassLoader());
+        final ServicesClassLoader classLoader = new ServicesClassLoader(rootArtifactFile, dependencies, Thread.currentThread().getContextClassLoader());
 
         try {
             return getAllClassesName(rootArtifactFile).stream()
                     .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
                     .filter(cls -> cls.isAnnotationPresent(Service.class))
                     .peek(this::checkClassRestrictions)
-                    .map(cls -> toServiceDescription(cls, classLoader))
+                    .map(cls -> toServiceDescription(cls, classLoader, rootGroupName))
                     .collect(Collectors.toList());
 
 
@@ -162,7 +159,7 @@ public class BundlePackager implements Plugin<Project> {
         }
     }
 
-    private ServiceDescription toServiceDescription(Class<?> cls, URLClassLoader classLoader) {
+    private ServiceDescription toServiceDescription(Class<?> cls, ServicesClassLoader classLoader, String rootGroupName) {
         final List<Class<?>> implInterfaces = Lists.newArrayList();
         walkClass(cls, implInterfaces);
 
@@ -173,13 +170,32 @@ public class BundlePackager implements Plugin<Project> {
         final Service.Type type = service.type();
         final Service.InitType initType = service.initType();
 
-        return ServiceDescription.builder()
+        final ServiceDescription.Builder builder = ServiceDescription.builder()
                 .setServiceImplName(cls.getName())
                 .setServiceName(name)
                 .setType(type)
-                .setInitType(initType)
-                .setInterfaces(implInterfaces.stream().map(Class::getName).collect(Collectors.toList()))
-                .build();
+                .setInitType(initType);
+
+        implInterfaces.forEach(i -> {
+            final boolean isApiDependency = classLoader.getDependencyHolder(i)
+                    .map(dh -> isApiDependency(rootGroupName, dh))
+                    .orElse(false);
+
+            builder.addInterface(i.getName(), isApiDependency ? ServiceDescription.AccessType.PUBLIC : ServiceDescription.AccessType.PRIVATE);
+        });
+
+        return builder.build();
+    }
+
+    private boolean isApiDependency(@Nonnull String rootGroupName, DependencyHolder dep) {
+        final String group = dep.getGroup();
+
+        if (StringUtils.startsWith(group, rootGroupName)) {
+            final String subGroup = StringUtils.split(group.substring(rootGroupName.length()), '.')[0];
+            return ADI_DEPENDENCY_GROUP.equalsIgnoreCase(subGroup);
+        }
+
+        return false;
     }
 
     private void walkClass(Class<?> cls, List<Class<?>> implInterfaces) {

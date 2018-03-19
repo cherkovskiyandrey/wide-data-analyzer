@@ -1,13 +1,14 @@
 package com.cherkovskiy.gradle.plugin;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -17,57 +18,92 @@ public class ServiceDescription {
 
     public enum AccessType {
         PUBLIC,
-        PRIVATE
+        PRIVATE,
     }
+
+    public static final String SERVICE_IMPL_NAME = "serviceImplName=>";
+    public static final String SERVICE_NAME = "serviceName=>";
+    public static final String TYPE = "type=>";
+    public static final String INIT_TYPE = "initType=>";
+    public static final String INTERFACES = "interfaces=>";
+    public static final String CLASS = "cls=>";
+    public static final String ACCESS_TYPE = "accessType=>";
+
+    private final static Pattern MAVEN_PATTERN = Pattern.compile("^" +
+            SERVICE_IMPL_NAME + "([^,]+)," +
+            SERVICE_NAME + "([^,]*)," +
+            TYPE + "([^,]+)," +
+            INIT_TYPE + "([^,]+)," +
+            INTERFACES + "\\[(.*)\\]$");
+
+    private final static Pattern MAVEN_INTERFACES_PATTERN = Pattern.compile(CLASS + "([^,]+)," +
+            ACCESS_TYPE + "(" +
+            Arrays.stream(AccessType.values()).map(Enum::toString).collect(Collectors.joining("|")) +
+            ")");
 
     private final String serviceImplName;
     private final String serviceName;
     private final Service.Type type;
     private final Service.InitType initType;
-    private final ImmutableList<String> interfaces;
-    private final AccessType accessType;
+    private final Map<String, AccessType> interfaces;
 
     private ServiceDescription(Builder builder) {
         this.serviceImplName = builder.serviceImplName;
         this.serviceName = builder.serviceName;
         this.type = builder.type;
         this.initType = builder.initType;
-        this.interfaces = new ImmutableList.Builder<String>().addAll(builder.interfaces).build();
-        this.accessType = builder.accessType;
+        this.interfaces = Maps.newHashMap(builder.interfaces);
     }
 
     @Nonnull
     public String toManifestCompatibleString() {
         final StringBuilder stringBuilder = new StringBuilder(1024);
 
-        stringBuilder.append("serviceImplName=>").append(serviceImplName).append(",");
-        stringBuilder.append("serviceName=>").append(StringUtils.isNoneBlank(serviceName) ? serviceName : "").append(",");
-        stringBuilder.append("type=>").append(type).append(",");
-        stringBuilder.append("initType=>").append(initType).append(",");
-        stringBuilder.append("accessType=>").append(accessType).append(",");
+        stringBuilder.append(SERVICE_IMPL_NAME).append(serviceImplName).append(",");
+        stringBuilder.append(SERVICE_NAME).append(StringUtils.isNoneBlank(serviceName) ? serviceName : "").append(",");
+        stringBuilder.append(TYPE).append(type).append(",");
+        stringBuilder.append(INIT_TYPE).append(initType).append(",");
 
-        stringBuilder.append("interfaces=>[");
-        stringBuilder.append(interfaces.stream().collect(Collectors.joining(",")));
+        stringBuilder.append(INTERFACES + "[");
+        stringBuilder.append(interfaces.entrySet().stream()
+                .map(entry -> String.format(CLASS + "%s," +
+                                ACCESS_TYPE + "%s",
+                        entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(","))
+        );
         stringBuilder.append("]");
 
         return stringBuilder.toString();
     }
 
     public static ServiceDescription fromManifestString(String serviceDescAsStr) {
-        final Pattern pattern = Pattern.compile("^serviceImplName=>([^,]+),serviceName=>([^,]*),type=>([^,]+),initType=>([^,]+),accessType=>([^,]+),interfaces=>\\[(.*)\\]$");
-        final Matcher matcher = pattern.matcher(serviceDescAsStr);
+        Matcher matcher = MAVEN_PATTERN.matcher(serviceDescAsStr);
 
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid format: " + serviceDescAsStr);
         }
 
-        return builder().setServiceImplName(matcher.replaceFirst("$1"))
+        final Builder builder = builder().setServiceImplName(matcher.replaceFirst("$1"))
                 .setServiceName(matcher.replaceFirst("$2"))
                 .setType(Service.Type.valueOf(matcher.replaceFirst("$3")))
-                .setInitType(Service.InitType.valueOf(matcher.replaceFirst("$4")))
-                .setAccessType(AccessType.valueOf(matcher.replaceFirst("$5")))
-                .setInterfaces(Arrays.stream(matcher.replaceFirst("$6").split(",")).collect(Collectors.toList()))
-                .build();
+                .setInitType(Service.InitType.valueOf(matcher.replaceFirst("$4")));
+
+        String interfaces = matcher.replaceFirst("$5");
+        matcher = MAVEN_INTERFACES_PATTERN.matcher(interfaces);
+
+
+        int end = 0;
+        while (matcher.find()) {
+            int start = matcher.start();
+            if (end != 0 && (interfaces.charAt(end) != ',' || start != end + 1)) {
+                throw new IllegalArgumentException("Invalid format: " + serviceDescAsStr);
+            }
+            end = matcher.end();
+
+            builder.addInterface(matcher.group(1), AccessType.valueOf(matcher.group(2)));
+        }
+
+        return builder.build();
     }
 
     public String getServiceImplName() {
@@ -86,16 +122,30 @@ public class ServiceDescription {
         return initType;
     }
 
-    public ImmutableList<String> getInterfaces() {
+    public Map<String, AccessType> getInterfaces() {
         return interfaces;
-    }
-
-    public AccessType getAccessType() {
-        return accessType;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ServiceDescription that = (ServiceDescription) o;
+
+        return Objects.equals(serviceImplName, that.serviceImplName) &&
+                Objects.equals(serviceName, that.serviceName) &&
+                type == that.type &&
+                initType == that.initType &&
+                Objects.equals(interfaces, that.interfaces);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(serviceImplName, serviceName, type, initType, interfaces);
     }
 
     public static class Builder {
@@ -103,8 +153,7 @@ public class ServiceDescription {
         private String serviceName;
         private Service.Type type = Service.Type.SINGLETON;
         private Service.InitType initType = Service.InitType.LAZY;
-        private List<String> interfaces = Lists.newArrayList();
-        private AccessType accessType = AccessType.PUBLIC;
+        private final LinkedHashMap<String, AccessType> interfaces = Maps.newLinkedHashMap();
 
         public Builder setServiceImplName(@Nonnull String serviceImplName) {
             this.serviceImplName = serviceImplName;
@@ -126,13 +175,8 @@ public class ServiceDescription {
             return this;
         }
 
-        public Builder setInterfaces(@Nonnull List<String> interfaces) {
-            this.interfaces = interfaces;
-            return this;
-        }
-
-        public Builder setAccessType(@Nonnull AccessType accessType) {
-            this.accessType = accessType;
+        public Builder addInterface(String interfaceName, AccessType accessType) {
+            interfaces.put(interfaceName, accessType);
             return this;
         }
 
