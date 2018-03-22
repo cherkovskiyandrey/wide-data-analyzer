@@ -1,31 +1,45 @@
+import groovy.io.FileType
+
 enableFeaturePreview('IMPROVED_POM_SUPPORT')
 rootProject.name = 'wide-data-analyzer'
 
 //------- API -----------------------
-include ':api:api-neural-network'
-include ':api:api-application-context'
-include ':api:api-comprehensive-serializer'
+new File(rootProject.projectDir, "api").traverse([type      : FileType.DIRECTORIES,
+                                                  nameFilter: ~/(api-.*)/,
+                                                  maxDepth  : 0]) { dir ->
+    include ":api:${dir.name}"
+}
 
+//------ Core, Common, Bundles, Plugins, Applications --------------------
+['core',
+ 'common',
+ 'bundles',
+ 'plugins',
+ 'applications'
+]
+        .each {
 
-//------ Core --------------------
-include ':core:application-context'
-include ':core:application-starter'
+    new File(rootProject.projectDir, it).traverse([type    : FileType.DIRECTORIES,
+                                                   maxDepth: 0]) { dir ->
+        if (new File(dir, "build.gradle").exists()) {
+            include ":${it}:${dir.name}"
+        }
+    }
+}
 
+//----------- Applications misc -----------
+new File(new File(rootProject.projectDir, "applications"), "misc").traverse([type    : FileType.DIRECTORIES,
+                                                                             maxDepth: 0]) { dir ->
+    if (new File(dir, "build.gradle").exists()) {
+        include ":applications:misc:${dir.name}"
+    }
+}
 
-//------ Common --------------------
-include ':common:application-context-common'
-
-
-//------ Bundles --------------------
-include ':bundles:neural-network-core'
-include ':bundles:comprehensive-serializer'
-
-
-//------ Plugins --------------------
-include ':plugins:neural-network-plugin'
-
-
-//----------- Applications-----------
-include ':applications:misc:nn-example'
-
+//----------- Applications utils -----------
+new File(new File(rootProject.projectDir, "applications"), "utils").traverse([type    : FileType.DIRECTORIES,
+                                                                              maxDepth: 0]) { dir ->
+    if (new File(dir, "build.gradle").exists()) {
+        include ":applications:utils:${dir.name}"
+    }
+}
 
