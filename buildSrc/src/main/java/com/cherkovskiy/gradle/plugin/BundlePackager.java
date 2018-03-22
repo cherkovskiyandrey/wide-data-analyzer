@@ -8,9 +8,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.ResolvedDependency;
 import org.gradle.jvm.tasks.Jar;
 import org.slieb.throwables.FunctionWithThrowable;
+import org.slieb.throwables.SuppressedException;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
@@ -26,16 +26,18 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
+
+import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRANSITIVE_OFF;
+import static com.cherkovskiy.gradle.plugin.DependencyType.API;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 public class BundlePackager implements Plugin<Project> {
     private static final String BUNDLE_NAME = "BUNDLE_NAME";
     private static final String BUNDLE_VERSION = "BUNDLE_VERSION";
     private static final String EXPORTED_SERVICES = "EXPORTED_SERVICES";
     private static final String MANIFEST_ENTRY_NAME = "META-INF/MANIFEST.MF";
-
-    private static final String FULL_RUNTIME_DEPENDENCY_TYPE = "compileClasspath";
     private static final String ADI_DEPENDENCY_GROUP = "api";
 
     private static final ImmutableList<String> FORBIDDEN_TO_DEPENDS_ON_LIST = new ImmutableList.Builder<String>()
@@ -50,16 +52,19 @@ public class BundlePackager implements Plugin<Project> {
         project.getTasks().withType(Jar.class).forEach(jar -> {
             jar.doLast(task -> {
 
-                //TODO: FunctionWithThrowable.castFunctionWithThrowable развернуть
-
                 final Jar jarTask = (Jar) task;
 
                 final String rootGroupName = lookUpRootGroupName(project);
-                final List<DependencyHolder> dependencies = getCompileDependencies(project);
 
-                checkImportRestrictions(rootGroupName, dependencies);
+                final DependencyScanner dependencyScanner = new DependencyScanner(project);
+                final List<DependencyHolder> dependencies = dependencyScanner.getDependencies();
 
-                final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), dependencies);
+                //Bundle can export only services from api dependencies without transitive these api dependencies
+                final List<DependencyHolder> resolvedByTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
+
+                checkImportRestrictions(rootGroupName, resolvedByTypeDependencies);
+
+                final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), resolvedByTypeDependencies);
                 addToManifest(jarTask.getArchivePath(), jarTask.getBaseName(), jarTask.getVersion(), serviceDescriptions);
             });
         });
@@ -79,45 +84,22 @@ public class BundlePackager implements Plugin<Project> {
                     }
                     return false;
                 })
-                .collect(Collectors.toList());
+                .collect(toList());
 
         if (!forbiddenDependencies.isEmpty()) {
             throw new GradleException(String.format("Bundle could not depends on: %s. There is forbidden dependencies: %s",
-                    FORBIDDEN_TO_DEPENDS_ON_LIST.stream().collect(Collectors.joining(", ")),
-                    forbiddenDependencies.stream().map(DependencyHolder::toString).collect(Collectors.joining(", "))
+                    FORBIDDEN_TO_DEPENDS_ON_LIST.stream().collect(joining(", ")),
+                    forbiddenDependencies.stream().map(DependencyHolder::toString).collect(joining(", "))
             ));
         }
     }
 
-
-    private String lookUpRootGroupName(Project project) {
+    @SuppressWarnings("StatementWithEmptyBody")
+    private String lookUpRootGroupName(@Nonnull Project project) {
         for (; project.getParent() != null; project = project.getParent()) {
         }
         return (String) project.getGroup();
     }
-
-    private List<DependencyHolder> getCompileDependencies(Project project) {
-        final List<DependencyHolder> dependencies = Lists.newArrayList();
-        for (ResolvedDependency resolvedDependency : project.getConfigurations()
-                .getByName(FULL_RUNTIME_DEPENDENCY_TYPE)
-                .getResolvedConfiguration()
-                .getFirstLevelModuleDependencies()) {
-
-            walkDependency(resolvedDependency, dependencies, null);
-        }
-        return dependencies;
-    }
-
-    private void walkDependency(ResolvedDependency resolvedDependency, List<DependencyHolder> dependencies, DependencyHolder parent) {
-        final DependencyHolder holder = new DependencyHolder(
-                resolvedDependency.getModule(),
-                resolvedDependency.getModuleArtifacts().iterator().next().getFile(),
-                parent);
-
-        dependencies.add(holder);
-        resolvedDependency.getChildren().forEach(childDependency -> walkDependency(childDependency, dependencies, holder));
-    }
-
 
     private List<ServiceDescription> extractAllServicesFrom(String rootGroupName, File rootArtifactFile, List<DependencyHolder> dependencies) {
         // We use parent class loader because this plugin uses outside api sources.
@@ -125,15 +107,17 @@ public class BundlePackager implements Plugin<Project> {
         final ServicesClassLoader classLoader = new ServicesClassLoader(rootArtifactFile, dependencies, Thread.currentThread().getContextClassLoader());
 
         try {
-            return getAllClassesName(rootArtifactFile).stream()
-                    .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
-                    .filter(cls -> cls.isAnnotationPresent(Service.class))
-                    .peek(this::checkClassRestrictions)
-                    .map(cls -> toServiceDescription(cls, classLoader, rootGroupName))
-                    .collect(Collectors.toList());
+            final List<String> allClasses = getAllClassesName(rootArtifactFile);
 
+            return SuppressedException.unwrapSuppressedException(() -> allClasses.stream()
+                            .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
+                            .filter(cls -> cls.isAnnotationPresent(Service.class))
+                            .peek(this::checkClassRestrictions)
+                            .map(cls -> toServiceDescription(cls, classLoader, rootGroupName))
+                            .collect(toList())
+                    , ClassNotFoundException.class);
 
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             throw new GradleException(e.getMessage(), e);
         }
     }
@@ -187,12 +171,14 @@ public class BundlePackager implements Plugin<Project> {
         return builder.build();
     }
 
-    private boolean isApiDependency(@Nonnull String rootGroupName, DependencyHolder dep) {
-        final String group = dep.getGroup();
+
+    private boolean isApiDependency(@Nonnull String rootGroupName, DependencyHolder apiDependency) {
+        final String group = apiDependency.getGroup();
 
         if (StringUtils.startsWith(group, rootGroupName)) {
             final String subGroup = StringUtils.split(group.substring(rootGroupName.length()), '.')[0];
-            return ADI_DEPENDENCY_GROUP.equalsIgnoreCase(subGroup);
+
+            return ADI_DEPENDENCY_GROUP.equalsIgnoreCase(subGroup) && apiDependency.getType() == API;
         }
 
         return false;
@@ -217,7 +203,7 @@ public class BundlePackager implements Plugin<Project> {
                     .filter(name -> name.endsWith(".class"))
                     .map(name -> name.replace(".class", ""))
                     .map(name -> name.replace('/', '.'))
-                    .collect(Collectors.toList());
+                    .collect(toList());
         }
     }
 
@@ -233,7 +219,7 @@ public class BundlePackager implements Plugin<Project> {
 
                 final String services = serviceDescriptions.stream()
                         .map(ServiceDescription::toManifestCompatibleString)
-                        .collect(Collectors.joining(";"));
+                        .collect(joining(";"));
 
                 attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
 

@@ -25,17 +25,21 @@ class ServicesClassLoader extends URLClassLoader {
                 .build();
     }
 
+    @SuppressWarnings("ConstantConditions")
     private static Map<String, DependencyHolder> toMapToUrl(List<DependencyHolder> dependencies) {
-        return dependencies.stream().collect(Collectors.toMap(
-                FunctionWithThrowable.castFunctionWithThrowable(dh -> dh.getFile().toURI().toURL().toString()),
-                Function.identity(),
-                (l, r) -> r
-        ));
+        return dependencies.stream()
+                .filter(d -> d.getFile().isPresent())
+                .collect(Collectors.toMap(
+                        FunctionWithThrowable.castFunctionWithThrowable(dh -> dh.getFile().get().toURI().toURL().toString()),
+                        Function.identity(),
+                        (l, r) -> r
+                ));
     }
 
+    @SuppressWarnings("ConstantConditions")
     private static URL[] toUrls(File rootArtifactFile, List<DependencyHolder> dependencies) {
-        return Stream.concat(Stream.of(rootArtifactFile), dependencies.stream().map(DependencyHolder::getFile))
-                .map(FunctionWithThrowable.castFunctionWithThrowable(jar -> jar.toURI().normalize().toURL()))
+        return Stream.concat(Stream.of(rootArtifactFile), dependencies.stream().filter(d -> d.getFile().isPresent()).map(d -> d.getFile().get()))
+                .map(FunctionWithThrowable.castFunctionWithThrowable(artifact -> artifact.toURI().normalize().toURL()))
                 .toArray(URL[]::new);
     }
 

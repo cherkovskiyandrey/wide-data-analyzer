@@ -1,19 +1,15 @@
 - Пишем градл плагин, который в манифест выкидывает все сервисы которые экспортирует бандл. (+)
-- Реализовать возможность внутре-бандового DI на уровне BundlePackager плагина (+)
+- Реализовать возможность внутри-бандового DI на уровне BundlePackager плагина (+)
+- Подумать и отписать как быть со стандартными интерфейсами типа Runnable - public или private доступ? (+)
+- Для api зависимостей, которые бандл реализует - accessType будет public,
+  а для всех остальных, в том числе и implemented и стандартные java интерфейсы
+   и транзитивные зависимости api - private (доступ только внутри бандла) (+)
 
-- Подумать и отписать как быть со стандартными интерфейсами типа Runnable - public или private доступ? (-)
-Manifest-Version: 1.0
-EXPORTED_SERVICES: serviceImplName=>com.cherkovskiy.neuron_networks.ml
- p.NeuronNetworkServiceImpl,serviceName=>mlp,type=>SINGLETON,initType=
- >EAGER,interfaces=>[cls=>com.cherkovskiy.neuron_networks.api.NeuronNe
- tworkService,accessType=>PUBLIC];serviceImplName=>com.cherkovskiy.neu
- ron_networks.mlp.NeuronNetworkTrainSetBuilderImpl,serviceName=>,type=
- >SINGLETON,initType=>LAZY,interfaces=>[cls=>com.cherkovskiy.neuron_ne
- tworks.TestInnerInterfaceForDI,accessType=>PRIVATE,cls=>com.cherkovsk
- iy.neuron_networks.api.NeuronNetworkDataSetBuilder,accessType=>PUBLIC
- ,cls=>java.lang.Runnable,accessType=>PRIVATE]
-BUNDLE_NAME: neural-network-core
-BUNDLE_VERSION: 1.0-SNAPSHOT
+
+- Hello world бандлы написать с различными вариантами DI и возможностью потом объединить их в плагины или в приложение (-)
+
+
+- После сборки бандла вывести на экран сервисы которые он экспортит (-)
 
 - Необходимо предусмотреть DI в рамках самого банда для удобства работы с кодом (-)
 
