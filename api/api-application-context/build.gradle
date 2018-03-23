@@ -2,7 +2,7 @@ group 'com.cherkovskiy.api'
 version '1.0-SNAPSHOT'
 
 dependencies {
-    api 'com.google.code.findbugs:jsr305:3.0.2'
+    api dependencyManagement['com.google.code.findbugs:jsr305']
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 }

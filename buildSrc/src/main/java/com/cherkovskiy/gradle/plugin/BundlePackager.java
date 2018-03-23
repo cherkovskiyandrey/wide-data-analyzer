@@ -47,6 +47,11 @@ public class BundlePackager implements Plugin<Project> {
             .add("plugin")
             .build();
 
+
+    //Obtain dependency by name from dependencyManagement:
+    //((Map<String, Dependency>)project.getProperties().get("dependencyManagement")).get("com.google.guava:guava").getName()
+
+
     @Override
     public void apply(@Nonnull Project project) {
         project.getTasks().withType(Jar.class).forEach(jar -> {

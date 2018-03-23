@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRANSITIVE_ON;
-import static com.cherkovskiy.gradle.plugin.DependencyType.COMPILE_CLASSPATH;
+import static com.cherkovskiy.gradle.plugin.DependencyType.RUNTIME_CLASSPATH;
 
 class DependencyScanner {
     enum TransitiveMode {
@@ -25,7 +25,7 @@ class DependencyScanner {
     }
 
     List<DependencyHolder> getDependencies() {
-        return getResolvedDependenciesByType(COMPILE_CLASSPATH);
+        return getResolvedDependenciesByType(RUNTIME_CLASSPATH);
     }
 
     List<DependencyHolder> resolveAgainst(List<DependencyHolder> dependencies, DependencyType type, TransitiveMode transitiveMode) {
