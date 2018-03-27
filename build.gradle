@@ -16,6 +16,10 @@ allprojects {
     compileJava {
         options.encoding = "UTF-8"
     }
+
+    if ((rootProject.name + '.bundles').equalsIgnoreCase(it.group as String)) {
+        apply plugin: 'bundle-packager' // the plugin is mandatory for each bundle
+    }
 }
 
 //Like maven BOM file: 3-rd party common dependencies which will be located in common library folder for plugins and programs.

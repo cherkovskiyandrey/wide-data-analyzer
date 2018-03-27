@@ -2,7 +2,7 @@ group 'com.cherkovskiy.bundle'
 version '1.0-SNAPSHOT'
 
 //apply plugin: 'custom-plugin-test'
-apply plugin: 'bundle-packager' // the plugin obligatory for each bundle
+//apply plugin: 'bundle-packager' // the plugin obligatory for each bundle
 
 bundle.embeddedDependencies = false
 
