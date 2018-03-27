@@ -4,6 +4,8 @@ version '1.0-SNAPSHOT'
 //apply plugin: 'custom-plugin-test'
 apply plugin: 'bundle-packager' // the plugin obligatory for each bundle
 
+bundle.embeddedDependencies = false
+
 dependencies {
 
     //-- api to expose ----

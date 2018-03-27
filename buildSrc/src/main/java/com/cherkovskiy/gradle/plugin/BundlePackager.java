@@ -27,9 +27,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class BundlePackager implements Plugin<Project> {
-
     private static final String ADI_DEPENDENCY_GROUP = "api";
-
     private static final ImmutableList<String> ALLOWED_TO_DEPENDS_ON_LIST = new ImmutableList.Builder<String>()
             .add("api")
             .add("common")
@@ -37,11 +35,11 @@ public class BundlePackager implements Plugin<Project> {
 
     @Override
     public void apply(@Nonnull Project project) {
+        final BundlePackagerConfiguration configuration = project.getExtensions().create(BundlePackagerConfiguration.NAME, BundlePackagerConfiguration.class);
+
         project.getTasks().withType(Jar.class).forEach(jar -> {
             jar.doLast(task -> {
-
                 final Jar jarTask = (Jar) task;
-
                 final String rootGroupName = Utils.lookUpRootGroupName(project);
 
                 final DependencyScanner dependencyScanner = new DependencyScanner(project);
@@ -58,10 +56,10 @@ public class BundlePackager implements Plugin<Project> {
                 final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), resolvedByApiTypeDependencies);
 
 
-                try (BundleArchive bundleArchive = new BundleArchive(jarTask.getArchivePath())) {
+                try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath())) {
                     bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
-                    bundleArchive.addApiDependencies(prjApiDependencies);
-                    bundleArchive.addImplDependencies(prjImplDependencies);
+                    bundleArchive.putApiDependencies(prjApiDependencies, configuration.embeddedDependencies);
+                    bundleArchive.putImplDependencies(prjImplDependencies, configuration.embeddedDependencies);
                     bundleArchive.addServices(serviceDescriptions);
                 } catch (IOException e) {
                     throw new GradleException("Could not change artifact: " + jarTask.getArchivePath().getAbsolutePath(), e);
