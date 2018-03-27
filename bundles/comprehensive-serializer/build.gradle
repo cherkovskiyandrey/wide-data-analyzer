@@ -6,11 +6,15 @@ dependencies {
     //To expose
     api project(':api:api-comprehensive-serializer')
 
-    implementation project(':api:api-application-context')
+    //implementation project(':api:api-application-context')
 
-    implementation dependencyManagement['commons-io:commons-io']
-    implementation dependencyManagement['org.apache.commons:commons-lang3']
+//    implementation dependencyManagement['commons-io:commons-io']
+//    implementation dependencyManagement['org.apache.commons:commons-lang3']
+
+    //test global dependency resolution
     implementation dependencyManagement['com.google.guava:guava']
-    implementation dependencyManagement['org.slieb:throwable-interfaces']
+
+//    implementation dependencyManagement['org.slieb:throwable-interfaces']
+//    implementation dependencyManagement['org.slf4j:slf4j-api']
 
 }

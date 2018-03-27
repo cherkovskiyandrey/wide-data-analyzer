@@ -2,15 +2,17 @@ package com.cherkovskiy.gradle.plugin;
 
 import javax.annotation.Nonnull;
 import java.io.File;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 //Don't override equals and hashcode - DependencyScanner assume these methods are default
 class DependencyHolder {
+
     private final String group;
     private final String name;
     private final String version;
-    private final File file;
+    private final List<File> files;
     private final DependencyType type;
     private final DependencyHolder parent;
     private final DependencyHolder root;
@@ -19,7 +21,7 @@ class DependencyHolder {
         this.group = builder.group;
         this.name = builder.name;
         this.version = builder.version;
-        this.file = builder.file;
+        this.files = builder.file;
         this.type = builder.type;
         this.parent = builder.parent;
         this.root = parent != null ? parent.getRoot() : this;
@@ -50,8 +52,8 @@ class DependencyHolder {
         return type;
     }
 
-    Optional<File> getFile() {
-        return Optional.ofNullable(file);
+    List<File> getArtifacts() {
+        return files;
     }
 
     Optional<DependencyHolder> getParent() {
@@ -89,7 +91,7 @@ class DependencyHolder {
         private String group;
         private String name;
         private String version;
-        private File file;
+        private List<File> file;
         private DependencyType type;
         private DependencyHolder parent;
 
@@ -108,7 +110,7 @@ class DependencyHolder {
             return this;
         }
 
-        Builder setFile(File file) {
+        Builder setFile(List<File> file) {
             this.file = file;
             return this;
         }
@@ -127,7 +129,7 @@ class DependencyHolder {
             this.group = orig.group;
             this.name = orig.name;
             this.version = orig.version;
-            this.file = orig.file;
+            this.file = orig.files;
             this.type = orig.type;
             this.parent = orig.parent;
             return this;

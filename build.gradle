@@ -8,6 +8,8 @@ allprojects {
     }
 
     apply plugin: 'java-library'
+    apply plugin: 'dependency-management'
+
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
 
@@ -16,10 +18,11 @@ allprojects {
     }
 }
 
-//3-rd party common dependencies which will be located in common library folder for plugins and programs.
-//Specific dependencies in bundles will be located with corresponded bundles.
+//Like maven BOM file: 3-rd party common dependencies which will be located in common library folder for plugins and programs.
+//dependency-management plugin scan all dependencies for each bundle against this list.
+//Create this list carefully.
 ext.dependencyManagement = [
-        //We can use with customization:
+        //We can use with customization like in below example:
 //        spring_core           : dependencies.create("org.springframework:spring-core:3.1") {
 //            exclude module: "commons-logging"
 //            force = true

@@ -3,7 +3,6 @@ package com.cherkovskiy.gradle.plugin;
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -13,19 +12,13 @@ import org.slieb.throwables.FunctionWithThrowable;
 import org.slieb.throwables.SuppressedException;
 
 import javax.annotation.Nonnull;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
-import java.util.jar.Attributes;
+import java.util.Optional;
 import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
 import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRANSITIVE_OFF;
@@ -34,23 +27,13 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class BundlePackager implements Plugin<Project> {
-    private static final String BUNDLE_NAME = "BUNDLE_NAME";
-    private static final String BUNDLE_VERSION = "BUNDLE_VERSION";
-    private static final String EXPORTED_SERVICES = "EXPORTED_SERVICES";
-    private static final String MANIFEST_ENTRY_NAME = "META-INF/MANIFEST.MF";
+
     private static final String ADI_DEPENDENCY_GROUP = "api";
 
-    private static final ImmutableList<String> FORBIDDEN_TO_DEPENDS_ON_LIST = new ImmutableList.Builder<String>()
-            .add("application")
-            .add("bundle")
-            .add("core")
-            .add("plugin")
+    private static final ImmutableList<String> ALLOWED_TO_DEPENDS_ON_LIST = new ImmutableList.Builder<String>()
+            .add("api")
+            .add("common")
             .build();
-
-
-    //Obtain dependency by name from dependencyManagement:
-    //((Map<String, Dependency>)project.getProperties().get("dependencyManagement")).get("com.google.guava:guava").getName()
-
 
     @Override
     public void apply(@Nonnull Project project) {
@@ -59,18 +42,30 @@ public class BundlePackager implements Plugin<Project> {
 
                 final Jar jarTask = (Jar) task;
 
-                final String rootGroupName = lookUpRootGroupName(project);
+                final String rootGroupName = Utils.lookUpRootGroupName(project);
 
                 final DependencyScanner dependencyScanner = new DependencyScanner(project);
                 final List<DependencyHolder> dependencies = dependencyScanner.getDependencies();
+                final List<DependencyHolder> prjApiDependencies = filterApiDependencies(dependencies, rootGroupName);
+
+                final List<DependencyHolder> prjImplDependencies = Lists.newArrayList(dependencies);
+                prjImplDependencies.removeAll(prjApiDependencies);
+
 
                 //Bundle can export only services from api dependencies without transitive these api dependencies
-                final List<DependencyHolder> resolvedByTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
+                final List<DependencyHolder> resolvedByApiTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
+                checkImportRestrictions(rootGroupName, resolvedByApiTypeDependencies);
+                final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), resolvedByApiTypeDependencies);
 
-                checkImportRestrictions(rootGroupName, resolvedByTypeDependencies);
 
-                final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), resolvedByTypeDependencies);
-                addToManifest(jarTask.getArchivePath(), jarTask.getBaseName(), jarTask.getVersion(), serviceDescriptions);
+                try (BundleArchive bundleArchive = new BundleArchive(jarTask.getArchivePath())) {
+                    bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
+                    bundleArchive.addApiDependencies(prjApiDependencies);
+                    bundleArchive.addImplDependencies(prjImplDependencies);
+                    bundleArchive.addServices(serviceDescriptions);
+                } catch (IOException e) {
+                    throw new GradleException("Could not change artifact: " + jarTask.getArchivePath().getAbsolutePath(), e);
+                }
             });
         });
     }
@@ -83,7 +78,7 @@ public class BundlePackager implements Plugin<Project> {
                     if (StringUtils.startsWith(group, rootGroupName)) {
                         final String subGroup = StringUtils.split(group.substring(rootGroupName.length()), '.')[0];
 
-                        if (FORBIDDEN_TO_DEPENDS_ON_LIST.stream().anyMatch(frb -> frb.equalsIgnoreCase(subGroup))) {
+                        if (ALLOWED_TO_DEPENDS_ON_LIST.stream().noneMatch(frb -> frb.equalsIgnoreCase(subGroup))) {
                             return true;
                         }
                     }
@@ -92,19 +87,13 @@ public class BundlePackager implements Plugin<Project> {
                 .collect(toList());
 
         if (!forbiddenDependencies.isEmpty()) {
-            throw new GradleException(String.format("Bundle could not depends on: %s. There is forbidden dependencies: %s",
-                    FORBIDDEN_TO_DEPENDS_ON_LIST.stream().collect(joining(", ")),
+            throw new GradleException(String.format("Bundle could depends only on: %s. There is forbidden dependencies: %s",
+                    ALLOWED_TO_DEPENDS_ON_LIST.stream().collect(joining(", ")),
                     forbiddenDependencies.stream().map(DependencyHolder::toString).collect(joining(", "))
             ));
         }
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
-    private String lookUpRootGroupName(@Nonnull Project project) {
-        for (; project.getParent() != null; project = project.getParent()) {
-        }
-        return (String) project.getGroup();
-    }
 
     private List<ServiceDescription> extractAllServicesFrom(String rootGroupName, File rootArtifactFile, List<DependencyHolder> dependencies) {
         // We use parent class loader because this plugin uses outside api sources.
@@ -180,13 +169,11 @@ public class BundlePackager implements Plugin<Project> {
     private boolean isApiDependency(@Nonnull String rootGroupName, DependencyHolder apiDependency) {
         final String group = apiDependency.getGroup();
 
-        if (StringUtils.startsWith(group, rootGroupName)) {
-            final String subGroup = StringUtils.split(group.substring(rootGroupName.length()), '.')[0];
-
-            return ADI_DEPENDENCY_GROUP.equalsIgnoreCase(subGroup) && apiDependency.getType() == API;
-        }
-
-        return false;
+        return Utils.subProjectAgainst(group, rootGroupName)
+                .map(pg ->
+                        ADI_DEPENDENCY_GROUP.equalsIgnoreCase(pg) &&
+                                apiDependency.getType() == API) //TRANSITIVE_OFF - get only first level api dependencies
+                .orElse(false);
     }
 
     private void walkClass(Class<?> cls, List<Class<?>> implInterfaces) {
@@ -212,41 +199,21 @@ public class BundlePackager implements Plugin<Project> {
         }
     }
 
-    private void addToManifest(File archivePath, String bundleName, String bundleVersion, List<ServiceDescription> serviceDescriptions) {
-        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024)) {
-            try (final JarFile jarFile = new JarFile(archivePath)) {
 
-                final Manifest manifest = new Manifest(jarFile.getManifest());
-                final Attributes attributes = manifest.getMainAttributes();
-
-                attributes.put(new Attributes.Name(BUNDLE_NAME), bundleName);
-                attributes.put(new Attributes.Name(BUNDLE_VERSION), bundleVersion);
-
-                final String services = serviceDescriptions.stream()
-                        .map(ServiceDescription::toManifestCompatibleString)
-                        .collect(joining(";"));
-
-                attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
-
-                try (JarOutputStream jarOutputStream = new JarOutputStream(byteArrayOutputStream, manifest)) {
-                    jarFile.stream()
-                            .filter(jarEntry -> !MANIFEST_ENTRY_NAME.equalsIgnoreCase(jarEntry.getName()))
-                            .forEach(jarEntry -> {
-                                try {
-                                    jarOutputStream.putNextEntry(jarEntry);
-                                    try (final InputStream jarEntryStream = jarFile.getInputStream(jarEntry)) {
-                                        IOUtils.copyLarge(jarEntryStream, jarOutputStream);
-                                    }
-                                    jarOutputStream.closeEntry();
-                                } catch (IOException e) {
-                                    throw new GradleException("Could not copy artifact: " + archivePath.getAbsolutePath(), e);
-                                }
-                            });
-                }
-            }
-            Files.write(archivePath.toPath(), byteArrayOutputStream.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException e) {
-            throw new GradleException("Could not open artifact: " + archivePath.getAbsolutePath(), e);
-        }
+    private List<DependencyHolder> filterApiDependencies(List<DependencyHolder> dependencies, @Nonnull String rootGroupName) {
+        //1. any parent is api
+        //2. itself api
+        return dependencies.stream()
+                .filter(dep -> {
+                    for (Optional<DependencyHolder> d = Optional.of(dep); d.isPresent(); d = d.flatMap(DependencyHolder::getParent)) {
+                        if (Utils.subProjectAgainst(d.get().getGroup(), rootGroupName)
+                                .map(ADI_DEPENDENCY_GROUP::equalsIgnoreCase)
+                                .orElse(false)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                .collect(toList());
     }
 }

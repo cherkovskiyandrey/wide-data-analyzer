@@ -2,10 +2,15 @@ package com.cherkovskiy.gradle.plugin;
 
 import com.google.common.collect.Lists;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.ResolvedDependency;
 
+import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -13,6 +18,7 @@ import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRA
 import static com.cherkovskiy.gradle.plugin.DependencyType.RUNTIME_CLASSPATH;
 
 class DependencyScanner {
+
     enum TransitiveMode {
         TRANSITIVE_OFF,
         TRANSITIVE_ON
@@ -53,6 +59,24 @@ class DependencyScanner {
         }
         return resolvedDependencies;
     }
+
+
+    @SuppressWarnings("unchecked")
+    public List<DependencyHolder> getManagementedDependencies() {
+        final List<DependencyHolder> dependencies = Lists.newArrayList();
+
+        for (ResolvedDependency resolvedDependency : project.getConfigurations()
+                .detachedConfiguration(
+                        ((Map<String, Dependency>) project.getProperties().get("dependencyManagement")).values().toArray(new Dependency[]{}))
+                .getResolvedConfiguration()
+                .getFirstLevelModuleDependencies()) {
+
+            walkDependency(resolvedDependency, dependencies, DependencyType.IMPLEMENTATION, null);
+        }
+
+        return dependencies;
+    }
+
 
     private List<DependencyHolder> copyWithNewType(List<DependencyHolder> transitiveTree, DependencyType typeOfRoot) {
         final List<DependencyHolder> result = Lists.newArrayList();
@@ -111,7 +135,7 @@ class DependencyScanner {
                 .setGroup(resolvedDependency.getModule().getId().getGroup())
                 .setName(resolvedDependency.getModule().getId().getName())
                 .setVersion(resolvedDependency.getModule().getId().getVersion())
-                .setFile(resolvedDependency.getModuleArtifacts().iterator().next().getFile())
+                .setFile(extractArtifacts(resolvedDependency.getModuleArtifacts()))
                 .setType(dependencyType)
                 .setParent(parent)
                 .build();
@@ -120,6 +144,11 @@ class DependencyScanner {
         resolvedDependency.getChildren().forEach(childDependency -> walkDependency(childDependency, dependencies, dependencyType, holder));
     }
 
+    private List<File> extractArtifacts(Set<ResolvedArtifact> moduleArtifacts) {
+        return moduleArtifacts.stream()
+                .map(ResolvedArtifact::getFile)
+                .collect(Collectors.toList());
+    }
 
     private List<DependencyHolder> getDependenciesByType(DependencyType dependencyType) {
         return project.getConfigurations()

@@ -1,0 +1,7 @@
+group 'com.cherkovskiy.application'
+version '1.0-SNAPSHOT'
+
+
+dependencies {
+    compile "commons-io:commons-io:2.5"
+}
