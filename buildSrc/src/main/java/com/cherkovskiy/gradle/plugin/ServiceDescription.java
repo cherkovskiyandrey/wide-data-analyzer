@@ -21,8 +21,8 @@ public class ServiceDescription {
         PRIVATE,
     }
 
-    public static final String SERVICE_IMPL_NAME = "serviceImplName=>";
-    public static final String SERVICE_NAME = "serviceName=>";
+    public static final String SERVICE_IMPL_NAME = "class=>";
+    public static final String SERVICE_NAME = "name=>";
     public static final String TYPE = "type=>";
     public static final String INIT_TYPE = "initType=>";
     public static final String INTERFACES = "interfaces=>";

@@ -6,10 +6,10 @@ import org.gradle.api.Project;
 import javax.annotation.Nonnull;
 import java.util.Optional;
 
-class Utils {
+public class Utils {
 
     @SuppressWarnings("StatementWithEmptyBody")
-    static String lookUpRootGroupName(@Nonnull Project project) {
+    public static String lookUpRootGroupName(@Nonnull Project project) {
         for (; project.getParent() != null; project = project.getParent()) {
         }
         return (String) project.getGroup();

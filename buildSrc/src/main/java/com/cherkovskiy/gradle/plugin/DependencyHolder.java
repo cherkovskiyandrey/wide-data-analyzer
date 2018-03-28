@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 //Don't override equals and hashcode - DependencyScanner assume these methods are default
-class DependencyHolder {
+public class DependencyHolder {
 
     private final String group;
     private final String name;
@@ -28,39 +28,39 @@ class DependencyHolder {
     }
 
 
-    static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
     @Nonnull
-    String getGroup() {
+    public String getGroup() {
         return group;
     }
 
     @Nonnull
-    String getName() {
+    public String getName() {
         return name;
     }
 
     @Nonnull
-    String getVersion() {
+    public String getVersion() {
         return version;
     }
 
     @Nonnull
-    DependencyType getType() {
+    public DependencyType getType() {
         return type;
     }
 
-    List<File> getArtifacts() {
+    public List<File> getArtifacts() {
         return files;
     }
 
-    Optional<DependencyHolder> getParent() {
+    public Optional<DependencyHolder> getParent() {
         return Optional.ofNullable(parent);
     }
 
-    boolean isTransitive() {
+    public boolean isTransitive() {
         return parent != null;
     }
 
@@ -68,7 +68,7 @@ class DependencyHolder {
      * @return root dependency of tree or itself if it is root
      */
     @Nonnull
-    DependencyHolder getRoot() {
+    public DependencyHolder getRoot() {
         return root;
     }
 
@@ -87,7 +87,7 @@ class DependencyHolder {
         return result.toString();
     }
 
-    static class Builder {
+    public static class Builder {
         private String group;
         private String name;
         private String version;
@@ -95,37 +95,37 @@ class DependencyHolder {
         private DependencyType type;
         private DependencyHolder parent;
 
-        Builder setGroup(String group) {
+        public Builder setGroup(String group) {
             this.group = group;
             return this;
         }
 
-        Builder setName(String name) {
+        public Builder setName(String name) {
             this.name = name;
             return this;
         }
 
-        Builder setVersion(String version) {
+        public Builder setVersion(String version) {
             this.version = version;
             return this;
         }
 
-        Builder setFile(List<File> file) {
+        public Builder setFile(List<File> file) {
             this.file = file;
             return this;
         }
 
-        Builder setType(DependencyType type) {
+        public Builder setType(DependencyType type) {
             this.type = type;
             return this;
         }
 
-        Builder setParent(DependencyHolder parent) {
+        public Builder setParent(DependencyHolder parent) {
             this.parent = parent;
             return this;
         }
 
-        Builder copyOf(DependencyHolder orig) {
+        public Builder copyOf(DependencyHolder orig) {
             this.group = orig.group;
             this.name = orig.name;
             this.version = orig.version;
@@ -135,7 +135,7 @@ class DependencyHolder {
             return this;
         }
 
-        DependencyHolder build() {
+        public DependencyHolder build() {
             Objects.requireNonNull(group);
             Objects.requireNonNull(name);
             Objects.requireNonNull(version);

@@ -1,5 +1,8 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.gradle.plugin.checker;
 
+import com.cherkovskiy.gradle.plugin.DependencyHolder;
+import com.cherkovskiy.gradle.plugin.DependencyScanner;
+import com.cherkovskiy.gradle.plugin.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;

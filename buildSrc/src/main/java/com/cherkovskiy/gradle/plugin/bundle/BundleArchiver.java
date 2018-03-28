@@ -1,5 +1,7 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.gradle.plugin.bundle;
 
+import com.cherkovskiy.gradle.plugin.DependencyHolder;
+import com.cherkovskiy.gradle.plugin.ServiceDescription;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;

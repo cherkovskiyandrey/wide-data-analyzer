@@ -1,18 +1,35 @@
 group 'com.cherkovskiy.application'
 version '1.0-SNAPSHOT'
 
-
+//-- code of application it is like ordered bundle
 dependencies {
 
-    //-- api
-    implementation project(':api:api-neural-network')
+    //-- api to expose ----
+    //api project(':api:api-neural-network')
+
+    //--- api to implementation -----
     implementation project(':api:api-application-context')
+    implementation project(':api:api-neural-network')
 
-    //TODO: перечисляем бандлы коры приложения без плагинов
+    //----- Common dependencies
+    implementation project(':common:application-context-common')
 
-
-    //И обязательно стартер
-    implementation project(':core:application-starter')
+    //------ 3-rd path dependencies
+    implementation dependencyManagement['com.google.guava:guava']
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
+
+//TODO
+// Supported formats: dir, zip, tgz
+//application.format = 'zip'
+
+//TODO
+//application.packDependencies = [
+//        //--- Starter is mandatory dependency
+//        ':core:application-starter',
+//
+//        //--- bundles to on board
+//        ':bundles:neural-network-core',
+//        ':bundles:comprehensive-serializer',
+//]

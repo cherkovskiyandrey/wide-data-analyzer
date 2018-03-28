@@ -41,7 +41,7 @@ public @interface Service {
      *
      * @return
      */
-    InitType initType() default InitType.LAZY;
+    InitType initType() default InitType.EAGER;
 
     enum Type {
         SINGLETON,

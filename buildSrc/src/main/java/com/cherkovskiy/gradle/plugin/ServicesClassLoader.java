@@ -16,10 +16,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
-class ServicesClassLoader extends URLClassLoader {
+public class ServicesClassLoader extends URLClassLoader {
     private final ImmutableMap<String, DependencyHolder> urlToHolder;
 
-    ServicesClassLoader(File rootArtifactFile, List<DependencyHolder> dependencies, ClassLoader parent) {
+    public ServicesClassLoader(File rootArtifactFile, List<DependencyHolder> dependencies, ClassLoader parent) {
         super(toUrls(rootArtifactFile, dependencies), parent);
 
         this.urlToHolder = ImmutableMap.<String, DependencyHolder>builder()

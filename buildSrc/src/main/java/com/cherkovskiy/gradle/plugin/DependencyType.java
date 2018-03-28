@@ -7,7 +7,7 @@ import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;
 
-enum DependencyType {
+public enum DependencyType {
 
     //From java library plugin
     API("api", false),
@@ -40,15 +40,15 @@ enum DependencyType {
         this.couldBeResolved = couldBeResolved;
     }
 
-    static DependencyType of(String gradleStr) {
+    public static DependencyType of(String gradleStr) {
         return STR_TO_TYPE.getOrDefault(gradleStr, UNKNOWN);
     }
 
-    String getGradleString() {
+    public String getGradleString() {
         return gradleStr;
     }
 
-    boolean couldBeResolved() {
+    public boolean couldBeResolved() {
         return couldBeResolved;
     }
 }

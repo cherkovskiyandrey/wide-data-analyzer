@@ -1,4 +1,4 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.gradle.plugin.bundle;
 
 public class BundlePackagerConfiguration {
     public static final String NAME = "bundle";

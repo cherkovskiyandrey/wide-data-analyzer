@@ -17,24 +17,24 @@ import java.util.stream.Collectors;
 import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRANSITIVE_ON;
 import static com.cherkovskiy.gradle.plugin.DependencyType.RUNTIME_CLASSPATH;
 
-class DependencyScanner {
+public class DependencyScanner {
 
-    enum TransitiveMode {
+    public enum TransitiveMode {
         TRANSITIVE_OFF,
         TRANSITIVE_ON
     }
 
     private final Project project;
 
-    DependencyScanner(Project project) {
+    public DependencyScanner(Project project) {
         this.project = project;
     }
 
-    List<DependencyHolder> getDependencies() {
+    public List<DependencyHolder> getDependencies() {
         return getResolvedDependenciesByType(RUNTIME_CLASSPATH);
     }
 
-    List<DependencyHolder> resolveAgainst(List<DependencyHolder> dependencies, DependencyType type, TransitiveMode transitiveMode) {
+    public List<DependencyHolder> resolveAgainst(List<DependencyHolder> dependencies, DependencyType type, TransitiveMode transitiveMode) {
         if (transitiveMode == TRANSITIVE_ON) {
             throw new UnsupportedOperationException("Transitive resolving is not supported yet.");
         }

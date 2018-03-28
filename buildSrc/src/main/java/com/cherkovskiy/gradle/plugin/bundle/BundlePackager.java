@@ -1,6 +1,7 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.gradle.plugin.bundle;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
+import com.cherkovskiy.gradle.plugin.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
