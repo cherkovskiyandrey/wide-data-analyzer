@@ -38,34 +38,32 @@ public class BundlePackager implements Plugin<Project> {
     public void apply(@Nonnull Project project) {
         final BundlePackagerConfiguration configuration = project.getExtensions().create(BundlePackagerConfiguration.NAME, BundlePackagerConfiguration.class);
 
-        project.getTasks().withType(Jar.class).forEach(jar -> {
-            jar.doLast(task -> {
-                final Jar jarTask = (Jar) task;
-                final String rootGroupName = Utils.lookUpRootGroupName(project);
+        project.getTasks().getAt("build").doLast(task -> {
+            final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
+            final String rootGroupName = Utils.lookUpRootGroupName(project);
 
-                final DependencyScanner dependencyScanner = new DependencyScanner(project);
-                final List<DependencyHolder> dependencies = dependencyScanner.getDependencies();
-                final List<DependencyHolder> prjApiDependencies = filterApiDependencies(dependencies, rootGroupName);
+            final DependencyScanner dependencyScanner = new DependencyScanner(project);
+            final List<DependencyHolder> dependencies = dependencyScanner.getDependencies();
+            final List<DependencyHolder> prjApiDependencies = filterApiDependencies(dependencies, rootGroupName);
 
-                final List<DependencyHolder> prjImplDependencies = Lists.newArrayList(dependencies);
-                prjImplDependencies.removeAll(prjApiDependencies);
-
-
-                //Bundle can export only services from api dependencies without transitive these api dependencies
-                final List<DependencyHolder> resolvedByApiTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
-                checkImportRestrictions(rootGroupName, resolvedByApiTypeDependencies);
-                final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), resolvedByApiTypeDependencies);
+            final List<DependencyHolder> prjImplDependencies = Lists.newArrayList(dependencies);
+            prjImplDependencies.removeAll(prjApiDependencies);
 
 
-                try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath())) {
-                    bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
-                    bundleArchive.putApiDependencies(prjApiDependencies, configuration.embeddedDependencies);
-                    bundleArchive.putImplDependencies(prjImplDependencies, configuration.embeddedDependencies);
-                    bundleArchive.addServices(serviceDescriptions);
-                } catch (IOException e) {
-                    throw new GradleException("Could not change artifact: " + jarTask.getArchivePath().getAbsolutePath(), e);
-                }
-            });
+            //Bundle can export only services from api dependencies without transitive these api dependencies
+            final List<DependencyHolder> resolvedByApiTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
+            checkImportRestrictions(rootGroupName, resolvedByApiTypeDependencies);
+            final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), resolvedByApiTypeDependencies);
+
+
+            try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath())) {
+                bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
+                bundleArchive.putApiDependencies(prjApiDependencies, configuration.embeddedDependencies);
+                bundleArchive.putImplDependencies(prjImplDependencies, configuration.embeddedDependencies);
+                bundleArchive.addServices(serviceDescriptions);
+            } catch (IOException e) {
+                throw new GradleException("Could not change artifact: " + jarTask.getArchivePath().getAbsolutePath(), e);
+            }
         });
     }
 

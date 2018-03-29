@@ -6,5 +6,5 @@ public class BundlePackagerConfiguration {
     /**
      * include dependencies of this bundle into archive or not (including api)
      */
-    boolean embeddedDependencies = false;
+    public boolean embeddedDependencies = false;
 }
