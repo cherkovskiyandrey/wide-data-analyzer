@@ -18,11 +18,12 @@ allprojects {
     }
 
     if ((rootProject.name + '.bundles').equalsIgnoreCase(it.group as String)) {
-        apply plugin: 'bundle-packager' // the plugin is mandatory for each bundle
+//        apply plugin: 'bundle-packager' // the plugin is mandatory for each bundle
     } else if ((it.group as String).matches(rootProject.name.replace('.', "\\.") + "\\.applications.*")) {
         apply plugin: 'application-packager' // the plugin is mandatory for each bundle
     }
 }
+
 
 //Like maven BOM file: 3-rd party common dependencies which will be located in common library folder for plugins and programs.
 //dependency-management plugin scan all dependencies for each bundle against this list.

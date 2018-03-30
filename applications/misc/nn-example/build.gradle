@@ -20,16 +20,45 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
-//TODO
-// Supported formats: dir, zip, tgz
-//application.format = 'zip'
+lazyLoader {
+    lazyPlugin {
+        load = ':gradle-plugins:bundle-packager'
+        cfgName = 'bundle'
+        cfg {
+            embeddedDependencies = true
+        }
+    }
+}
 
-//TODO
-//application.packDependencies = [
-//        //--- Starter is mandatory dependency
-//        ':core:application-starter',
+//lazyLoader {
+//    lazyPlugin {
+//        load = ':gradle-plugins:dependency-management'
+//        cfgName = 'applicationCfg'
+//        cfg {
+//            format = "tar for nn-example"
+//        }
+//    }
+//}
 //
-//        //--- bundles to on board
-//        ':bundles:neural-network-core',
-//        ':bundles:comprehensive-serializer',
-//]
+//// override
+//lazyLoader {
+//    lazyPlugin {
+//        load = ':gradle-plugins:dependency-management'
+//        cfgName = 'applicationCfg'
+//        cfg {
+//            format = "tar for nn-example override"
+//        }
+//    }
+//}
+//
+//// plus set other plugin
+//lazyLoader {
+//    lazyPlugin {
+//        load = ':gradle-plugins:bundle-packager'
+//        cfgName = 'bundle'
+//        cfg {
+//            embeddedDependencies = false
+//        }
+//    }
+//}
+
