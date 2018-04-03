@@ -15,8 +15,7 @@ new File(rootProject.projectDir, "api").traverse([type      : FileType.DIRECTORI
  'common',
  'bundles',
  'plugins',
- 'applications',
- 'gradle-plugins'
+ 'applications'
 ]
         .each {
 

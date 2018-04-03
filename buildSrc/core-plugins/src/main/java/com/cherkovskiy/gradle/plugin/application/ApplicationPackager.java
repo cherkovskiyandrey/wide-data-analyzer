@@ -14,38 +14,44 @@ public class ApplicationPackager implements Plugin<Project> {
 
     @Override
     public void apply(@Nonnull Project project) {
-        final LazyLoaderConfig configuration = project.getExtensions().create(LazyLoaderConfig.NAME, LazyLoaderConfig.class, project);
+//        final LazyLoaderConfig configuration = project.getExtensions().create(LazyLoaderConfig.NAME, LazyLoaderConfig.class, project);
+//
 
-        project.getTasks().getAt("compileJava").doFirst(new Action<Task>() {
-            @Override
-            public void execute(Task task) {
-
-
-                //Загружаем код плагина
-                configuration.getPluginConfigSet().forEach(lazyPluginConfig -> {
-
-                    System.out.println("Plugin artifacts ===>>>> " +
-                            project.project(lazyPluginConfig.getLoad()).getTasks().withType(Jar.class).iterator().next().getArchivePath());
-
-                    //TODO: получить все его зависимости и запихать в URL класслоадер, а потом его установить как текущий потоковый
-                    // найти в архиве класс который имплементит плагин, попросить его у лоадера, дернуть ему apply,
-                    // потом подпихнуть конйигурацию и всё
-
-                });
+        System.out.println("ApplicationPackager");
 
 
-//                // это сделает плагин
-//                final ApplicationPackagerConfiguration confOfLazyPlugin = project.getExtensions()
-//                        .create(ApplicationPackagerConfiguration.NAME, ApplicationPackagerConfiguration.class);
-//                //-------------
+        //Use instead:
+        //project.getGradle().getTaskGraph().whenReady();
+//        project.getTasks().getAt("compileJava").doFirst(new Action<Task>() {
+//            @Override
+//            public void execute(Task task) {
 //
 //
-//                // а потом мы ему подпихнём конфигурацию
-//                project.getExtensions().configure(configuration.getCfgName(), configuration.getCfgAction());
+//                //Загружаем код плагина
+//                configuration.getPluginConfigSet().forEach(lazyPluginConfig -> {
 //
-//                System.out.println("================>>>>>> Plugin applied for " + project.getDisplayName() + " => " + confOfLazyPlugin.format);
-            }
-        });
+//                    System.out.println("Plugin artifacts ===>>>> " +
+//                            project.project(lazyPluginConfig.getLoad()).getTasks().withType(Jar.class).iterator().next().getArchivePath());
+//
+//                    //TODO: получить все его зависимости и запихать в URL класслоадер, а потом его установить как текущий потоковый
+//                    // найти в архиве класс который имплементит плагин, попросить его у лоадера, дернуть ему apply,
+//                    // потом подпихнуть конйигурацию и всё
+//
+//                });
+//
+//
+////                // это сделает плагин
+////                final ApplicationPackagerConfiguration confOfLazyPlugin = project.getExtensions()
+////                        .create(ApplicationPackagerConfiguration.NAME, ApplicationPackagerConfiguration.class);
+////                //-------------
+////
+////
+////                // а потом мы ему подпихнём конфигурацию
+////                project.getExtensions().configure(configuration.getCfgName(), configuration.getCfgAction());
+////
+////                System.out.println("================>>>>>> Plugin applied for " + project.getDisplayName() + " => " + confOfLazyPlugin.format);
+//            }
+//        });
 
 
 //        //вызвать у подгружаемого плагина apply(), он может зарегать свой конфиг, а потом мы его таким мокаром сконфигурируем

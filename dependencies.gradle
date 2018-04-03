@@ -1,0 +1,21 @@
+//Like maven BOM file: 3-rd party common dependencies which will be located in common library folder for plugins and programs.
+//dependency-management plugin scan all dependencies for each bundle against this list.
+//Create this list carefully.
+ext.dependencyManagement = [
+        //We can use with customization like in below example:
+//        spring_core           : dependencies.create("org.springframework:spring-core:3.1") {
+//            exclude module: "commons-logging"
+//            force = true
+//        },
+        'com.google.guava:guava'             : dependencies.create('com.google.guava:guava:23.6-jre'),
+        'com.google.code.findbugs:jsr305'    : dependencies.create('com.google.code.findbugs:jsr305:3.0.2'),
+
+        'log4j:log4j'                        : dependencies.create('log4j:log4j:1.2.17'),
+        'org.slf4j:slf4j-log4j12'            : dependencies.create('org.slf4j:slf4j-log4j12:1.7.25'),
+        'org.slf4j:slf4j-api'                : dependencies.create('org.slf4j:slf4j-api:1.7.25'),
+        'org.slieb:throwable-interfaces'     : dependencies.create('org.slieb:throwable-interfaces:1.13'),
+
+        'commons-io:commons-io'              : dependencies.create('commons-io:commons-io:2.5'),
+        'org.apache.commons:commons-lang3'   : dependencies.create('org.apache.commons:commons-lang3:3.7'),
+        'org.apache.commons:commons-compress': dependencies.create('org.apache.commons:commons-compress:1.15'),
+]

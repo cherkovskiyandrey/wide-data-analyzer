@@ -1,0 +1,14 @@
+dependencies {
+    compile project(':api:api-application-context')
+    compile project(':common:virtual-file-system')
+
+    compile dependencyManagement['commons-io:commons-io']
+    compile dependencyManagement['org.apache.commons:commons-lang3']
+    compile dependencyManagement['com.google.guava:guava']
+    compile dependencyManagement['org.slieb:throwable-interfaces']
+
+    implementation dependencyManagement['commons-io:commons-io']
+    implementation dependencyManagement['org.apache.commons:commons-compress']
+
+    testCompile 'junit:junit:4.12'
+}

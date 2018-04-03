@@ -1,0 +1,17 @@
+enableFeaturePreview('IMPROVED_POM_SUPPORT')
+
+//------- Gradle plugins -----------------------
+include ":core-plugins"
+
+
+//------- imported form root project API -----------------------
+include ":api:api-application-context"
+project(":api:api-application-context").projectDir = new File(settingsDir, '../api/api-application-context')
+project(":api:api-application-context").buildFileName = 'build.gradle' //can be customised for plugin
+
+
+//------ imported form root project Core, Common --------------------
+include ":common:virtual-file-system"
+project(":common:virtual-file-system").projectDir = new File(settingsDir, '../common/virtual-file-system')
+project(":common:virtual-file-system").buildFileName = 'build.gradle' //can be customised for plugin
+
