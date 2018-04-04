@@ -59,7 +59,7 @@ class SimpleDirectoryEntry implements DirectoryEntry {
     }
 
     @Override
-    public void markForRead() {
+    public void markToRead() {
     }
 
     File getFile() {

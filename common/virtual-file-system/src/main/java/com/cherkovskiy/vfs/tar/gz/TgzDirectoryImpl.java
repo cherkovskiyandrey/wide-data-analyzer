@@ -6,11 +6,12 @@ import com.cherkovskiy.vfs.tar.TarDirectoryImpl;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-public class TgzDirectoryImpl extends TarDirectoryImpl {
-    public TgzDirectoryImpl(String file) {
+class TgzDirectoryImpl extends TarDirectoryImpl {
+    TgzDirectoryImpl(String file) {
         super(file);
     }
 
@@ -18,7 +19,8 @@ public class TgzDirectoryImpl extends TarDirectoryImpl {
         super(archiveName, fileCache);
     }
 
-    protected TarArchiveInputStream openInputStream(String file) {
+    @Override
+    protected TarArchiveInputStream openInputStream(File file) {
         try {
             return new TarArchiveInputStream(new GzipCompressorInputStream(new FileInputStream(file)));
         } catch (IOException e) {

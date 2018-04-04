@@ -61,7 +61,7 @@ public class BundlePackager implements Plugin<Project> {
                 bundleArchive.putApiDependencies(prjApiDependencies, configuration.embeddedDependencies);
                 bundleArchive.putImplDependencies(prjImplDependencies, configuration.embeddedDependencies);
                 bundleArchive.addServices(serviceDescriptions);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new GradleException("Could not change artifact: " + jarTask.getArchivePath().getAbsolutePath(), e);
             }
         });

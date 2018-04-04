@@ -1,12 +1,9 @@
 package com.cherkovskiy.vfs.tar;
 
 import com.cherkovskiy.vfs.Attributes;
+import com.cherkovskiy.vfs.BaseArchiveMutableDirectory;
 import com.cherkovskiy.vfs.BaseAttributesImpl;
-import com.cherkovskiy.vfs.DirectoryEntry;
 import com.cherkovskiy.vfs.MutableDirectory;
-import com.cherkovskiy.vfs.cache.FileCache;
-import com.cherkovskiy.vfs.cache.FileEntryIterator;
-import com.cherkovskiy.vfs.cache.FileSystemCache;
 import com.cherkovskiy.vfs.exceptions.DirectoryException;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -14,72 +11,15 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.*;
-import java.util.Iterator;
 
-import static java.lang.String.format;
+public class TarMutableDirectoryImpl extends BaseArchiveMutableDirectory implements MutableDirectory {
 
-public class TarMutableDirectoryImpl implements MutableDirectory {
-    private final String archiveName;
-    private final FileCache fileCache = new FileSystemCache();
-
-    public TarMutableDirectoryImpl(String archiveName, boolean createIfNotExists) {
-        if (StringUtils.isEmpty(archiveName)) {
-            throw new IllegalArgumentException("ArchiveName is null or empty");
-        }
-        this.archiveName = archiveName;
-
-        final File archive = new File(archiveName);
-
-        if (!createIfNotExists) {
-            if (!archive.exists()) {
-                throw new IllegalArgumentException(format("%s does not exists", archiveName));
-            }
-
-            if (!archive.isFile()) {
-                throw new IllegalArgumentException(format("%s is not a file", archiveName));
-            }
-
-            unpack(archiveName);
-
-        } else {
-            if (archive.exists()) {
-
-                if (!archive.isFile()) {
-                    throw new IllegalArgumentException(format("%s is not a file", archiveName));
-                }
-
-                unpack(archiveName);
-            }
-        }
+    protected TarMutableDirectoryImpl(String archiveName, boolean createIfNotExists) {
+        super(archiveName, createIfNotExists);
     }
 
-    @Override
-    public boolean createIfNotExists(@Nonnull String path, @Nullable InputStream inputStream, @Nullable Attributes attributes) {
-        if (!fileCache.contain(path)) {
-            fileCache.put(path, inputStream, attributes);
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean removeIfExists(@Nonnull DirectoryEntry path, boolean removeEmptyFolders) {
-        return fileCache.remove(path.getPath(), removeEmptyFolders);
-    }
-
-    @Override
-    public void close() throws IOException {
-        try {
-            pack();
-        } finally {
-            fileCache.close();
-        }
-    }
-
-    protected TarArchiveOutputStream openOutputStream(String file) {
+    protected TarArchiveOutputStream openOutputStream(File file) {
         try {
             return new TarArchiveOutputStream(new FileOutputStream(file));
         } catch (IOException e) {
@@ -87,7 +27,7 @@ public class TarMutableDirectoryImpl implements MutableDirectory {
         }
     }
 
-    protected TarArchiveInputStream openInputStream(String file) {
+    protected TarArchiveInputStream openInputStream(File file) {
         try {
             return new TarArchiveInputStream(new FileInputStream(file));
         } catch (IOException e) {
@@ -95,8 +35,9 @@ public class TarMutableDirectoryImpl implements MutableDirectory {
         }
     }
 
-    private void unpack(String archiveName) {
-        try (TarArchiveInputStream stream = openInputStream(archiveName)) {
+    @Override
+    protected void unpack() {
+        try (TarArchiveInputStream stream = openInputStream(getMainFile())) {
             TarArchiveEntry entry;
 
             while ((entry = stream.getNextTarEntry()) != null) {
@@ -111,8 +52,9 @@ public class TarMutableDirectoryImpl implements MutableDirectory {
         }
     }
 
-    private void pack() {
-        try (TarArchiveOutputStream tarArchiveOutputStream = openOutputStream(archiveName)) {
+    @Override
+    protected void pack() {
+        try (TarArchiveOutputStream tarArchiveOutputStream = openOutputStream(getMainFile())) {
             fileCache.normalize();
             for (String filePath : fileCache) {
                 final Attributes attributes = fileCache.getAttributes(filePath);
@@ -122,9 +64,13 @@ public class TarMutableDirectoryImpl implements MutableDirectory {
                         new TarArchiveEntry(fileCache.getAsFile(filePath), filePath) :
                         new TarArchiveEntry(filePath);
 
-                if (attributes.getUnixMode() != null) tarArchiveEntry.setMode(attributes.getUnixMode());
-                if (StringUtils.isNotBlank(attributes.getOwner())) tarArchiveEntry.setUserName(attributes.getOwner());
-                if (StringUtils.isNotBlank(attributes.getGroup())) tarArchiveEntry.setGroupName(attributes.getGroup());
+                if (attributes != null) {
+                    if (attributes.getUnixMode() != null) tarArchiveEntry.setMode(attributes.getUnixMode());
+                    if (StringUtils.isNotBlank(attributes.getOwner()))
+                        tarArchiveEntry.setUserName(attributes.getOwner());
+                    if (StringUtils.isNotBlank(attributes.getGroup()))
+                        tarArchiveEntry.setGroupName(attributes.getGroup());
+                }
 
                 tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
 
@@ -139,11 +85,5 @@ public class TarMutableDirectoryImpl implements MutableDirectory {
         } catch (IOException e) {
             throw new DirectoryException(e);
         }
-    }
-
-    @Override
-    @Nonnull
-    public Iterator<DirectoryEntry> iterator() {
-        return new FileEntryIterator(fileCache, null);
     }
 }

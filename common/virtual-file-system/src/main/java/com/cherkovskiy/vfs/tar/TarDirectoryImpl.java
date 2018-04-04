@@ -1,5 +1,6 @@
 package com.cherkovskiy.vfs.tar;
 
+import com.cherkovskiy.vfs.BaseDirectory;
 import com.cherkovskiy.vfs.Directory;
 import com.cherkovskiy.vfs.DirectoryEntry;
 import com.cherkovskiy.vfs.cache.FileCache;
@@ -8,7 +9,6 @@ import com.cherkovskiy.vfs.exceptions.DirectoryException;
 import com.google.common.collect.Maps;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -20,28 +20,22 @@ import java.util.NoSuchElementException;
 
 import static java.lang.String.format;
 
-public class TarDirectoryImpl implements Directory {
-    private final String archiveName;
+public class TarDirectoryImpl extends BaseDirectory implements Directory {
     private final FileCache fileCache;
     private final boolean isFileCacheExternal;
     private final Map<IteratorImpl, TarArchiveInputStream> iteratorToStream = Maps.newHashMap();
 
-    public TarDirectoryImpl(String baseFile) {
+    protected TarDirectoryImpl(String baseFile) {
         this(baseFile, null);
     }
 
-    public TarDirectoryImpl(String archiveName, FileCache fileCache) {
-        if (StringUtils.isEmpty(archiveName)) {
-            throw new IllegalArgumentException(format("archiveName is null or empty: %s", archiveName));
-        }
-        this.archiveName = archiveName;
-        final File archive = new File(archiveName);
-
-        if (!archive.exists()) {
+    protected TarDirectoryImpl(String archiveName, FileCache fileCache) {
+        super(archiveName);
+        if (!getMainFile().exists()) {
             throw new IllegalArgumentException(format("archiveName does not exists: %s", archiveName));
         }
 
-        if (!archive.isFile()) {
+        if (!getMainFile().isFile()) {
             throw new IllegalArgumentException(format("archiveName is not a file: %s", archiveName));
         }
 
@@ -49,7 +43,7 @@ public class TarDirectoryImpl implements Directory {
         this.isFileCacheExternal = fileCache != null;
     }
 
-    protected TarArchiveInputStream openInputStream(String file) {
+    protected TarArchiveInputStream openInputStream(File file) {
         try {
             return new TarArchiveInputStream(new FileInputStream(file));
         } catch (IOException e) {
@@ -59,17 +53,24 @@ public class TarDirectoryImpl implements Directory {
 
     @Override
     public void close() throws IOException {
-        if (!isFileCacheExternal) {
-            fileCache.close();
-        }
-        for (TarArchiveInputStream archive : iteratorToStream.values()) {
-            archive.close();
+        try {
+            if (!isFileCacheExternal) {
+                fileCache.close();
+            }
+            for (TarArchiveInputStream archive : iteratorToStream.values()) {
+                archive.close();
+            }
+        } finally {
+            super.close();
         }
     }
 
     @Nonnull
     @Override
     public Iterator<DirectoryEntry> iterator() {
+        if (!isOpen()) {
+            throw new DirectoryException(format("File %s is closed!", getMainFile().getAbsoluteFile()));
+        }
         return new IteratorImpl();
     }
 
@@ -79,7 +80,7 @@ public class TarDirectoryImpl implements Directory {
 
 
         IteratorImpl() {
-            this.tarInputStream = openInputStream(archiveName);
+            this.tarInputStream = openInputStream(getMainFile());
             iteratorToStream.put(this, this.tarInputStream);
         }
 
@@ -123,7 +124,7 @@ public class TarDirectoryImpl implements Directory {
 
             final TarArchiveEntry result = currentEntry;
             currentEntry = null;
-            return new TarDirectoryEntry(tarInputStream, result, archiveName, fileCache);
+            return new TarDirectoryEntry(tarInputStream, result, getMainFile().getAbsolutePath(), fileCache);
         }
     }
 }

@@ -122,7 +122,7 @@
 //                .setGroup(resolvedDependency.getModule().getId().getGroup())
 //                .setName(resolvedDependency.getModule().getId().getName())
 //                .setVersion(resolvedDependency.getModule().getId().getVersion())
-//                .setFile(resolvedDependency.getModuleArtifacts().iterator().next().getFile())
+//                .setFile(resolvedDependency.getModuleArtifacts().iterator().next().getMainFile())
 //                .setParent(parent)
 //                .setType(DependencyType.IMPLEMENTATION)
 //                .build();
@@ -137,7 +137,7 @@
 //                resolvedDependency.getModule().getId().getName() + ":" +
 //                resolvedDependency.getModule().getId().getVersion()
 //                + "     =>      " +
-//                resolvedDependency.getModuleArtifacts().iterator().next().getFile()
+//                resolvedDependency.getModuleArtifacts().iterator().next().getMainFile()
 //        );
 //        if(!resolvedDependency.getChildren().isEmpty()) {
 //            System.out.println(blankets(i) + "dependencies: [");

@@ -2,22 +2,21 @@ package com.cherkovskiy.gradle.plugin.bundle;
 
 import com.cherkovskiy.gradle.plugin.DependencyHolder;
 import com.cherkovskiy.gradle.plugin.ServiceDescription;
+import com.cherkovskiy.vfs.DirectoryFactory;
+import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
@@ -31,23 +30,22 @@ class BundleArchiver implements Closeable {
     private static final String IS_API_EMBEDDED = "WDA-Bundle-Api-Embedded";
     private static final String IS_IMPL_EMBEDDED = "WDA-Bundle-Impl-Embedded";
 
-    private static final String MANIFEST_ENTRY_NAME = "META-INF/MANIFEST.MF";
     public static final String API_PATH = "embedded/api/";
     public static final String IMPL_PATH = "embedded/libs/";
 
-    private final File archivePath;
-    private final JarFile jarFile;
+    private final JarDirectoryAdapter jarFile;
     private final Manifest manifest;
     private final Set<ServiceDescription> serviceDescriptions = Sets.newHashSet();
     private final Set<String> apiDependencies = Sets.newHashSet();
     private final Set<String> implDependencies = Sets.newHashSet();
-    private final Set<File> apiEmbeddedDependencies = Sets.newHashSet();
-    private final Set<File> implEmbeddedDependencies = Sets.newHashSet();
 
-    public BundleArchiver(File archivePath) throws IOException {
-        this.archivePath = archivePath;
-        this.jarFile = new JarFile(archivePath);
-        this.manifest = new Manifest(jarFile.getManifest());
+    public BundleArchiver(File archivePath) {
+        this.jarFile = new JarDirectoryAdapter(DirectoryFactory.defaultInstance().tryDetectAndOpen(archivePath.getAbsolutePath(), false));
+        this.manifest = jarFile.getManifest();
+
+        if (this.manifest == null) {
+            throw new GradleException(format("Jar archive %s does not contain Manifest.", archivePath));
+        }
     }
 
     public void setBundleNameVersion(String bundleName, String bundleVersion) {
@@ -57,15 +55,20 @@ class BundleArchiver implements Closeable {
         attributes.put(new Attributes.Name(BUNDLE_VERSION), bundleVersion);
     }
 
-    public void putApiDependencies(List<DependencyHolder> dependencies, boolean isEmbedded) {
-        putDependencies(dependencies, apiDependencies, apiEmbeddedDependencies, isEmbedded);
+    public void putApiDependencies(List<DependencyHolder> dependencies, boolean isEmbedded) throws IOException {
+        putDependencies(dependencies, apiDependencies, IS_API_EMBEDDED, API_PATH, isEmbedded);
     }
 
-    public void putImplDependencies(List<DependencyHolder> dependencies, boolean isEmbedded) {
-        putDependencies(dependencies, implDependencies, implEmbeddedDependencies, isEmbedded);
+    public void putImplDependencies(List<DependencyHolder> dependencies, boolean isEmbedded) throws IOException {
+        putDependencies(dependencies, implDependencies, IS_IMPL_EMBEDDED, IMPL_PATH, isEmbedded);
     }
 
-    private void putDependencies(List<DependencyHolder> dependencies, Set<String> asArchiveName, Set<File> asFile, boolean isEmbedded) {
+    private void putDependencies(List<DependencyHolder> dependencies,
+                                 Set<String> asArchiveName,
+                                 String embeddedMnfFlag,
+                                 String embeddedBaseDir,
+                                 boolean isEmbedded) throws IOException {
+
         final Set<File> depArchives = dependencies.stream()
                 .map(d -> d.getArtifacts().stream()
                         .filter(this::isArchive)
@@ -77,11 +80,17 @@ class BundleArchiver implements Closeable {
         asArchiveName.addAll(depArchives.stream().map(File::getName).collect(Collectors.toSet()));
 
         if (isEmbedded) {
-            asFile.addAll(depArchives);
+            for (File dep : depArchives) {
+                //todo: to separate api and transitive 3-rd party api libs
+                try (InputStream inputStream = FileUtils.openInputStream(dep)) {
+                    jarFile.createIfNotExists(embeddedBaseDir + dep.getName(), inputStream, null);
+                }
+            }
+            final Attributes attributes = manifest.getMainAttributes();
+            attributes.put(new Attributes.Name(embeddedMnfFlag), Boolean.TRUE.toString());
         }
     }
 
-    //TODO: to enum
     private boolean isArchive(File file) {
         return file.getAbsolutePath().endsWith(".jar") || file.getAbsolutePath().endsWith(".war");
     }
@@ -92,86 +101,21 @@ class BundleArchiver implements Closeable {
 
     @Override
     public void close() throws IOException {
-        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024)) {
-            writeServicesToManifest(manifest);
-            writeApiDepsToManifest(manifest);
-            writeImplDepsToManifest(manifest);
-            try (JarOutputStream jarOutputStream = new JarOutputStream(byteArrayOutputStream, manifest)) {
-                jarFile.stream()
-                        .filter(jarEntry -> !MANIFEST_ENTRY_NAME.equalsIgnoreCase(jarEntry.getName()))
-                        .forEach(jarEntry -> {
-                            try {
-                                jarOutputStream.putNextEntry(jarEntry);
-                                try (final InputStream jarEntryStream = jarFile.getInputStream(jarEntry)) {
-                                    IOUtils.copyLarge(jarEntryStream, jarOutputStream);
-                                }
-                                jarOutputStream.closeEntry();
-                            } catch (IOException e) {
-                                throw new GradleException("Could not copy artifact: " + archivePath.getAbsolutePath(), e);
-                            }
-                        });
-                putEmbeddedApiDeps(jarOutputStream);
-                putEmbeddedImplDeps(jarOutputStream);
-            }
-            jarFile.close();
-            Files.write(archivePath.toPath(), byteArrayOutputStream.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        }
-    }
+        final Attributes attributes = manifest.getMainAttributes();
 
-    private void writeServicesToManifest(Manifest manifest) {
-        String services = serviceDescriptions.stream()
+        final String services = serviceDescriptions.stream()
                 .map(ServiceDescription::toManifestCompatibleString)
                 .collect(joining(";"));
-
-        final Attributes attributes = manifest.getMainAttributes();
         attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
+
+        final String allApiDependencies = apiDependencies.stream().collect(Collectors.joining(","));
+        attributes.put(new Attributes.Name(API_DEPENDENCIES), allApiDependencies);
+
+        final String allImplDependencies = implDependencies.stream().collect(Collectors.joining(","));
+        attributes.put(new Attributes.Name(IMPL_DEPENDENCIES), allImplDependencies);
+
+        jarFile.setManifest(manifest);
+
+        jarFile.close();
     }
-
-    private void writeApiDepsToManifest(Manifest manifest) {
-        String allApiDeps = apiDependencies.stream().collect(Collectors.joining(","));
-
-        final Attributes attributes = manifest.getMainAttributes();
-        attributes.put(new Attributes.Name(API_DEPENDENCIES), allApiDeps);
-
-        if (!apiEmbeddedDependencies.isEmpty()) {
-            attributes.put(new Attributes.Name(IS_API_EMBEDDED), Boolean.TRUE.toString());
-        }
-    }
-
-    private void writeImplDepsToManifest(Manifest manifest) {
-        String allImplDeps = implDependencies.stream().collect(Collectors.joining(","));
-
-        final Attributes attributes = manifest.getMainAttributes();
-        attributes.put(new Attributes.Name(IMPL_DEPENDENCIES), allImplDeps);
-
-        if (!implEmbeddedDependencies.isEmpty()) {
-            attributes.put(new Attributes.Name(IS_IMPL_EMBEDDED), Boolean.TRUE.toString());
-        }
-    }
-
-    private void putEmbeddedApiDeps(JarOutputStream jarOutputStream) throws IOException {
-        if (!apiEmbeddedDependencies.isEmpty()) {
-
-            for (File dep : apiEmbeddedDependencies) {
-                //todo: to separate api and transitive 3-rd party api libs
-                final ZipEntry zipEntry = new ZipEntry(API_PATH + dep.getName());
-                jarOutputStream.putNextEntry(zipEntry);
-                FileUtils.copyFile(dep, jarOutputStream);
-                jarOutputStream.closeEntry();
-            }
-        }
-    }
-
-    private void putEmbeddedImplDeps(JarOutputStream jarOutputStream) throws IOException {
-        if (!implEmbeddedDependencies.isEmpty()) {
-
-            for (File dep : implEmbeddedDependencies) {
-                final ZipEntry zipEntry = new ZipEntry(IMPL_PATH + dep.getName());
-                jarOutputStream.putNextEntry(zipEntry);
-                FileUtils.copyFile(dep, jarOutputStream);
-                jarOutputStream.closeEntry();
-            }
-        }
-    }
-
 }

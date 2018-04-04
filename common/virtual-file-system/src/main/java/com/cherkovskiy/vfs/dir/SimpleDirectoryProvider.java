@@ -23,7 +23,7 @@ public class SimpleDirectoryProvider implements DirectoryProvider {
 
     @Override
     public List<String> getSupportedFormats() {
-        return Collections.singletonList(".dir");
+        return Collections.singletonList("dir");
     }
 
     @Override

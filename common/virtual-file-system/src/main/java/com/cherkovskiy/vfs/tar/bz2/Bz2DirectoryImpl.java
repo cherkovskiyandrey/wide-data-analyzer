@@ -7,6 +7,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -19,7 +20,8 @@ class Bz2DirectoryImpl extends TarDirectoryImpl {
         super(archiveName, fileCache);
     }
 
-    protected TarArchiveInputStream openInputStream(String file) {
+    @Override
+    protected TarArchiveInputStream openInputStream(File file) {
         try {
             return new TarArchiveInputStream(
                     new BZip2CompressorInputStream(

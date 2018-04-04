@@ -59,7 +59,7 @@ public class TarDirectoryEntry implements DirectoryEntry {
     }
 
     @Override
-    public void markForRead() {
+    public void markToRead() {
         if (!isDirectory()) {
             if (!tarInputStream.getCurrentEntry().equals(currentEntry)) {
                 throw new DirectoryException("Can`t cache file, because file iterator is not on this file position.");

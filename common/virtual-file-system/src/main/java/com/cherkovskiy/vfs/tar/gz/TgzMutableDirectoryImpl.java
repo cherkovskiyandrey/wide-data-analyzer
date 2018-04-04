@@ -7,18 +7,15 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 
-public class TgzMutableDirectoryImpl extends TarMutableDirectoryImpl {
+class TgzMutableDirectoryImpl extends TarMutableDirectoryImpl {
     TgzMutableDirectoryImpl(String archiveName, boolean createIfNotExists) {
         super(archiveName, createIfNotExists);
     }
 
     @Override
-    protected TarArchiveOutputStream openOutputStream(String file) {
+    protected TarArchiveOutputStream openOutputStream(File file) {
         try {
             return new TarArchiveOutputStream(
                     new GzipCompressorOutputStream(
@@ -34,7 +31,7 @@ public class TgzMutableDirectoryImpl extends TarMutableDirectoryImpl {
     }
 
     @Override
-    protected TarArchiveInputStream openInputStream(String file) {
+    protected TarArchiveInputStream openInputStream(File file) {
         try {
             return new TarArchiveInputStream(new GzipCompressorInputStream(new FileInputStream(file)));
         } catch (IOException e) {

@@ -63,7 +63,7 @@ class ZipDirectoryEntry implements DirectoryEntry {
     }
 
     @Override
-    public void markForRead() {
+    public void markToRead() {
         if (!isDirectory()) {
             try (final InputStream inputStream = getInputStream()) {
                 fileCache.put(getPath(), inputStream, getAttributes());

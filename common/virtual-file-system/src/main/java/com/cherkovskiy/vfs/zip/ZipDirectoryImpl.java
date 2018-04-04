@@ -1,5 +1,6 @@
 package com.cherkovskiy.vfs.zip;
 
+import com.cherkovskiy.vfs.BaseDirectory;
 import com.cherkovskiy.vfs.Directory;
 import com.cherkovskiy.vfs.DirectoryEntry;
 import com.cherkovskiy.vfs.cache.FileCache;
@@ -10,7 +11,6 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -18,8 +18,7 @@ import java.util.NoSuchElementException;
 
 import static java.lang.String.format;
 
-class ZipDirectoryImpl implements Directory {
-    private final String archiveName;
+class ZipDirectoryImpl extends BaseDirectory implements Directory {
     private final ZipFile zipFile;
     private final FileCache fileCache;
     private final boolean isFileCacheExternal;
@@ -29,17 +28,12 @@ class ZipDirectoryImpl implements Directory {
     }
 
     private ZipDirectoryImpl(String archiveName, FileCache fileCache) {
-        if (StringUtils.isEmpty(archiveName)) {
-            throw new IllegalArgumentException("ArchiveName is null or empty");
-        }
-        this.archiveName = archiveName;
-        final File archive = new File(archiveName);
-
-        if (!archive.exists()) {
+        super(archiveName);
+        if (!getMainFile().exists()) {
             throw new IllegalArgumentException(format("ArchiveName does not exists: %s", archiveName));
         }
 
-        if (!archive.isFile()) {
+        if (!getMainFile().isFile()) {
             throw new IllegalArgumentException(format("ArchiveName is not a file: %s", archiveName));
         }
 
@@ -54,17 +48,24 @@ class ZipDirectoryImpl implements Directory {
 
     @Override
     public void close() throws IOException {
-        if (zipFile != null) {
-            zipFile.close();
-        }
-        if (!isFileCacheExternal) {
-            fileCache.close();
+        try {
+            if (zipFile != null) {
+                zipFile.close();
+            }
+            if (!isFileCacheExternal) {
+                fileCache.close();
+            }
+        } finally {
+            super.close();
         }
     }
 
     @Nonnull
     @Override
     public Iterator<DirectoryEntry> iterator() {
+        if (!isOpen()) {
+            throw new DirectoryException(format("File %s is closed!", getMainFile().getAbsoluteFile()));
+        }
         final Enumeration<ZipArchiveEntry> zipEntries = zipFile.getEntriesInPhysicalOrder();
 
         return new Iterator<DirectoryEntry>() {
@@ -95,7 +96,7 @@ class ZipDirectoryImpl implements Directory {
                 }
                 ZipArchiveEntry result = currentEntry;
                 currentEntry = null;
-                return new ZipDirectoryEntry(zipFile, result, archiveName, fileCache);
+                return new ZipDirectoryEntry(zipFile, result, getMainFile().getAbsolutePath(), fileCache);
             }
         };
     }

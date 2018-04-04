@@ -16,9 +16,11 @@ public interface MutableDirectory extends Directory {
      *
      * @param path
      * @param inputStream
+     * @return DirectoryEntry if entry created successfully or nul if entry already exists.
      * @throws IOException
      */
-    boolean createIfNotExists(@Nonnull String path, @Nullable InputStream inputStream, @Nullable Attributes attributes);
+    @Nullable
+    DirectoryEntry createIfNotExists(@Nonnull String path, @Nullable InputStream inputStream, @Nullable Attributes attributes);
 
 
     /**

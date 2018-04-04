@@ -1,12 +1,12 @@
 package com.cherkovskiy.vfs.dir;
 
 import com.cherkovskiy.vfs.Attributes;
+import com.cherkovskiy.vfs.BaseDirectory;
 import com.cherkovskiy.vfs.DirectoryEntry;
 import com.cherkovskiy.vfs.MutableDirectory;
 import com.cherkovskiy.vfs.exceptions.DirectoryException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -25,20 +25,16 @@ import java.util.Objects;
 import static java.lang.String.format;
 
 @NotThreadSafe
-class SimpleDirectoryImpl implements MutableDirectory {
-    private final File directory;
+class SimpleDirectoryImpl extends BaseDirectory implements MutableDirectory {
     private long changesCounter = 0;
 
     SimpleDirectoryImpl(String baseFile, boolean createIfNotExists) {
-        if (StringUtils.isEmpty(baseFile)) {
-            throw new IllegalArgumentException("BaseFile is null or empty.");
-        }
-        this.directory = new File(baseFile);
+        super(baseFile);
 
-        if (!directory.exists()) {
+        if (!getMainFile().exists()) {
             if (createIfNotExists) {
                 try {
-                    Files.createDirectories(directory.toPath());
+                    Files.createDirectories(getMainFile().toPath());
                 } catch (IOException e) {
                     throw new DirectoryException(e);
                 }
@@ -47,13 +43,14 @@ class SimpleDirectoryImpl implements MutableDirectory {
             }
         }
 
-        if (!directory.isDirectory()) {
+        if (!getMainFile().isDirectory()) {
             throw new IllegalArgumentException(format("%s is not a directory.", baseFile));
         }
     }
 
     @Override
     public void close() throws IOException {
+        super.close();
     }
 
     @Nonnull
@@ -61,7 +58,7 @@ class SimpleDirectoryImpl implements MutableDirectory {
     public Iterator<DirectoryEntry> iterator() {
         final Iterator<Path> pathStream;
         try {
-            pathStream = Files.walk(directory.toPath(), Integer.MAX_VALUE, FileVisitOption.FOLLOW_LINKS).iterator();
+            pathStream = Files.walk(getMainFile().toPath(), Integer.MAX_VALUE, FileVisitOption.FOLLOW_LINKS).iterator();
         } catch (IOException e) {
             throw new DirectoryException(e);
         }
@@ -83,15 +80,15 @@ class SimpleDirectoryImpl implements MutableDirectory {
                     throw new ConcurrentModificationException();
                 }
                 final File file = pathStream.next().toFile();
-                return new SimpleDirectoryEntry(file, directory);
+                return new SimpleDirectoryEntry(file, getMainFile());
             }
         };
     }
 
     @Override
-    public boolean createIfNotExists(@Nonnull String path, @Nullable InputStream inputStream, @Nullable Attributes attributes) {
+    public DirectoryEntry createIfNotExists(@Nonnull String path, @Nullable InputStream inputStream, @Nullable Attributes attributes) {
         try {
-            final File newFile = Paths.get(directory.getCanonicalPath(), path).toFile();
+            final File newFile = Paths.get(getMainFile().getCanonicalPath(), path).toFile();
             if (!newFile.exists()) {
                 if (isDirectory(newFile)) {
                     FileUtils.forceMkdir(newFile);
@@ -102,12 +99,12 @@ class SimpleDirectoryImpl implements MutableDirectory {
                     AttributeHelper.setAttributes(newFile, attributes);
                 }
                 changesCounter++;
-                return true;
+                return new SimpleDirectoryEntry(newFile, getMainFile());
             }
         } catch (IOException e) {
             throw new DirectoryException(e);
         }
-        return false;
+        return null;
     }
 
     private boolean isDirectory(@Nonnull File file) {
@@ -141,7 +138,7 @@ class SimpleDirectoryImpl implements MutableDirectory {
                 if (removeEmptyFolders) {
                     final Path parent = removedFile.toPath().normalize().getParent();
                     if (parent != null) {
-                        result |= removeIfExists(new SimpleDirectoryEntry(parent.toFile(), directory), true);
+                        result |= removeIfExists(new SimpleDirectoryEntry(parent.toFile(), getMainFile()), true);
                     }
                 }
             } catch (IOException e) {

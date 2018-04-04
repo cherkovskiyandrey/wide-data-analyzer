@@ -9,13 +9,13 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 
 import java.io.*;
 
-public class Bz2MutableDirectoryImpl extends TarMutableDirectoryImpl {
+class Bz2MutableDirectoryImpl extends TarMutableDirectoryImpl {
     Bz2MutableDirectoryImpl(String archiveName, boolean createIfNotExists) {
         super(archiveName, createIfNotExists);
     }
 
     @Override
-    protected TarArchiveOutputStream openOutputStream(String file) {
+    protected TarArchiveOutputStream openOutputStream(File file) {
         try {
             return new TarArchiveOutputStream(
                     new BZip2CompressorOutputStream(
@@ -31,7 +31,7 @@ public class Bz2MutableDirectoryImpl extends TarMutableDirectoryImpl {
     }
 
     @Override
-    protected TarArchiveInputStream openInputStream(String file) {
+    protected TarArchiveInputStream openInputStream(File file) {
         try {
             return new TarArchiveInputStream(
                     new BZip2CompressorInputStream(

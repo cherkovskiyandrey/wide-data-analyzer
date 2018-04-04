@@ -48,7 +48,7 @@ public interface DirectoryEntry {
      * <p>
      * Usually this method is invoked when stream is walking.
      */
-    void markForRead();
+    void markToRead();
 
     /**
      * Represent file entry as string.
