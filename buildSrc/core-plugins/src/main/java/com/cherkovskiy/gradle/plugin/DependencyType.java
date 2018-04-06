@@ -25,6 +25,10 @@ public enum DependencyType {
     ANNOTATION_PROCESSOR("annotationProcessor", true),
     RUNTIME("runtime", true),
 
+    // Custom configurations
+    STUFF_ALL_API("___all_api___", true),
+
+
     //Not interested dependencies
     UNKNOWN("unknown", false);
 

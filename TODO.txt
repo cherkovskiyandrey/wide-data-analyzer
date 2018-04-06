@@ -20,12 +20,27 @@
 	* project.getTasks().getAt("build").doLast(new Action<Task>() {
 - сделать buildSrc как мультипроект и включить в него необходимые подпроекты главного проекта (+)
 - переписать BundleArchiver с использованием vfs (+)
+- в бандл плагине реализовать ___all_api___ конфигурацию (+)
+- разрезолвить ___all_api___ и сопоставить с бандловской (+)
+- написать api-dependency-checker - проверяем что зависим только от других api проектов и все сторонние либы входят в dependencyManagement (+)
+
+- для embedded плагина layout должен быть такой же как и для приложения: api, lib\common, lib\wda, lib (-)
 
 - application-packager: сбор всех бандлов, апи, сторонних либ, общих библиотек и их размещенние по каталогам (-)
 	* перетащить и адаптировать vfs проект (+)
 	* подключиться к vfs проекту (+)
+	* вытащить все onboard бандл зависимости и положить их в core_bundles, а если бандл без embedded зависимостей,
+		то вытащить транзитивные зависимости и положить соответственно по api, lib\common, lib\wda, lib  (-)
+--------------------------------------- как сделать ------------------------------------------------
+по сути повторяем работу bundle-packager ИНДИВИДУАЛЬНО для каждого бандла!
+((DefaultProjectDependency) project.getConfigurations().getByName("onboard").getDependencies().toArray(new Dependency[0])[0]).getDependencyProject().getPath()
+((DefaultProjectDependency) project.getConfigurations().getByName("onboard").getDependencies().toArray(new Dependency[0])[2]).getDependencyProject().getConfigurations()                 .getByName(dependencyType.getGradleString())                 .getResolvedConfiguration()                 .getFirstLevelModuleDependencies()
+Проверить что резолвинг по отдельности каждого onboard не пересикается с резолвингом onboard целиком (+) -> всё ок!!
+----------------------------------------------------------------------------------------------------
 
+- отвязаться от группы и использовать Project#getPath() в плагинах для определения принадлежности той или иной группе (-)
 - application-packager: ревизия не реализованных API с предупреждением (-)
+
 
 - Начать разработку plugin-packager плагина (-)
 

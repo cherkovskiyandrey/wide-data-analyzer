@@ -10,7 +10,12 @@ dependencies {
 
     implementation dependencyManagement['commons-io:commons-io']
     implementation dependencyManagement['org.apache.commons:commons-lang3']
-    implementation dependencyManagement['com.google.guava:guava']
+
+
+    //Test onboard in application
+    //implementation dependencyManagement['com.google.guava:guava']
+    implementation 'com.google.guava:guava:23.5-jre'
+
     implementation dependencyManagement['org.slieb:throwable-interfaces']
     implementation 'org.apache.bcel:bcel:6.2'
 

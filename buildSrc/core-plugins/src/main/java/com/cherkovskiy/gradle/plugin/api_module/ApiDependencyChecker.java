@@ -1,20 +1,21 @@
-package com.cherkovskiy.gradle.plugin.checker;
+package com.cherkovskiy.gradle.plugin.api_module;
 
 import com.cherkovskiy.gradle.plugin.DependencyHolder;
 import com.cherkovskiy.gradle.plugin.DependencyScanner;
 import com.cherkovskiy.gradle.plugin.Utils;
 import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.logging.LogLevel;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class DependencyManagementChecker implements Plugin<Project> {
+import static java.lang.String.format;
 
+public class ApiDependencyChecker implements Plugin<Project> {
     @Override
     public void apply(Project project) {
 
@@ -35,11 +36,13 @@ public class DependencyManagementChecker implements Plugin<Project> {
                         .findFirst();
 
                 if (!mngDep.isPresent()) {
-                    project.getLogger().log(LogLevel.ERROR, "Artifact: {} does'n exists in dependencyManagement section of root build.gradle", prjDep);
+                    throw new GradleException(format("For all api projects it is not allowed to use 3rd party dependencies which does not exists in dependencyManagement section. " +
+                                    "For project \"%s\" artifact: \"%s\" does'n exists in dependencyManagement section of root build.gradle",
+                            project.getPath(), prjDep));
 
                 } else if (!Objects.equals(mngDep.get().getVersion(), prjDep.getVersion())) {
-                    project.getLogger().log(LogLevel.ERROR, "Artifact: {} has other version than {} in dependencyManagement section of root build.gradle. ",
-                            prjDep, mngDep.get().getVersion());
+                    throw new GradleException(format("For all api projects it is not allowed to use 3rd party dependencies with different version from dependencyManagement section. " +
+                            "Project \"%s\" has other version 3rd-party dependency: \"%s\". Must be used %s!", project.getPath(), prjDep, mngDep.get().getVersion()));
                 }
             }
         });

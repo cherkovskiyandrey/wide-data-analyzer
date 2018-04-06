@@ -18,14 +18,24 @@ allprojects {
     }
 }
 
+configure(subprojects.findAll { it.group == (rootProject.name + '.api') }) {
+    apply plugin: 'api-dependency-checker' // the plugin is mandatory for each bundle
+    //Use to debug
+    //logger.log(LogLevel.ERROR, "api-dependency-checker applied to: ${it.group}:${it.name}:${it.version}")
+}
+
 configure(subprojects.findAll { it.group == (rootProject.name + '.bundles') }) {
     apply plugin: 'bundle-packager' // the plugin is mandatory for each bundle
+    //Use to debug
+    //logger.log(LogLevel.ERROR, "bundle-packager applied to: ${it.group}:${it.name}:${it.version}")
 }
 
 configure(subprojects.findAll {
     (it.group as String).matches(rootProject.name.replace('.', "\\.") + "\\.applications.*")
 }) {
     apply plugin: 'application-packager' // the plugin is mandatory for each bundle
+    //Use to debug
+    //logger.log(LogLevel.ERROR, "application-packager applied to: ${it.group}:${it.name}:${it.version}")
 }
 
 apply from: file('dependencies.gradle')

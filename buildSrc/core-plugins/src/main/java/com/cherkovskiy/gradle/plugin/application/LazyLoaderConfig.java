@@ -23,7 +23,7 @@ public class LazyLoaderConfig {
         lazyPluginConfigure.execute(lazyPluginConfig);
         pluginConfigSet.add(lazyPluginConfig);
 
-        project.getTasks().getAt("compileJava").dependsOn(lazyPluginConfig.getLoad() + ":build");
+        //project.getTasks().getAt("compileJava").dependsOn(lazyPluginConfig.getLoad() + ":build");
     }
 
     public Set<LazyPluginConfig> getPluginConfigSet() {

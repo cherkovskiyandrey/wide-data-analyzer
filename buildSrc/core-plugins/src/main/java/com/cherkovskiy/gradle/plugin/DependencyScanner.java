@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRANSITIVE_ON;
 import static com.cherkovskiy.gradle.plugin.DependencyType.RUNTIME_CLASSPATH;
+import static java.lang.String.format;
 
 public class DependencyScanner {
 
@@ -30,7 +31,7 @@ public class DependencyScanner {
         this.project = project;
     }
 
-    public List<DependencyHolder> getDependencies() {
+    public List<DependencyHolder> getRuntimeDependencies() {
         return getResolvedDependenciesByType(RUNTIME_CLASSPATH);
     }
 
@@ -118,7 +119,11 @@ public class DependencyScanner {
     }
 
 
-    private List<DependencyHolder> getResolvedDependenciesByType(DependencyType dependencyType) {
+    public List<DependencyHolder> getResolvedDependenciesByType(DependencyType dependencyType) {
+        if (!dependencyType.couldBeResolved()) {
+            throw new IllegalArgumentException(format("Dependency type %s could not be resolved.", dependencyType.getGradleString()));
+        }
+
         final List<DependencyHolder> dependencies = Lists.newArrayList();
         for (ResolvedDependency resolvedDependency : project.getConfigurations()
                 .getByName(dependencyType.getGradleString())

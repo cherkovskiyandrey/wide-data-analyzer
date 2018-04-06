@@ -18,12 +18,16 @@ import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRANSITIVE_OFF;
 import static com.cherkovskiy.gradle.plugin.DependencyType.API;
+import static com.cherkovskiy.gradle.plugin.DependencyType.STUFF_ALL_API;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -38,23 +42,28 @@ public class BundlePackager implements Plugin<Project> {
     public void apply(@Nonnull Project project) {
         final BundlePackagerConfiguration configuration = project.getExtensions().create(BundlePackagerConfiguration.NAME, BundlePackagerConfiguration.class);
 
+        createAndInitStuffApiConfig(project);
+
         project.getTasks().getAt("build").doLast(task -> {
             final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
             final String rootGroupName = Utils.lookUpRootGroupName(project);
 
             final DependencyScanner dependencyScanner = new DependencyScanner(project);
-            final List<DependencyHolder> dependencies = dependencyScanner.getDependencies();
+            final List<DependencyHolder> dependencies = dependencyScanner.getRuntimeDependencies();
+            final List<DependencyHolder> allApiDependencies = dependencyScanner.getResolvedDependenciesByType(STUFF_ALL_API);
+
+            checkDependenciesAgainst(project, dependencies, allApiDependencies);
+
             final List<DependencyHolder> prjApiDependencies = filterApiDependencies(dependencies, rootGroupName);
 
             final List<DependencyHolder> prjImplDependencies = Lists.newArrayList(dependencies);
             prjImplDependencies.removeAll(prjApiDependencies);
 
 
-            //Bundle can export only services from api dependencies without transitive these api dependencies
+            //Bundle can export only services from api dependencies without services from transitive these api dependencies
             final List<DependencyHolder> resolvedByApiTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
             checkImportRestrictions(rootGroupName, resolvedByApiTypeDependencies);
             final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), resolvedByApiTypeDependencies);
-
 
             try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath())) {
                 bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
@@ -67,30 +76,28 @@ public class BundlePackager implements Plugin<Project> {
         });
     }
 
+    private void createAndInitStuffApiConfig(Project project) {
+        project.getConfigurations().create(STUFF_ALL_API.getGradleString(), conf -> conf.getDependencies().addAll(
+                project.getRootProject().getSubprojects().stream()
+                        .filter(sp -> sp.getPath().contains(":api:"))
+                        .map(project.getDependencies()::create)
+                        .collect(Collectors.toSet())));
+    }
+
     private void checkImportRestrictions(@Nonnull String rootGroupName, @Nonnull List<DependencyHolder> dependencies) {
         final List<DependencyHolder> forbiddenDependencies = dependencies.stream()
-                .filter(dep -> {
-                    final String group = dep.getGroup();
-
-                    if (StringUtils.startsWith(group, rootGroupName)) {
-                        final String subGroup = StringUtils.split(group.substring(rootGroupName.length()), '.')[0];
-
-                        if (ALLOWED_TO_DEPENDS_ON_LIST.stream().noneMatch(frb -> frb.equalsIgnoreCase(subGroup))) {
-                            return true;
-                        }
-                    }
-                    return false;
-                })
+                .filter(dep -> Utils.subProjectAgainst(dep.getGroup(), rootGroupName)
+                        .map(subGroup -> ALLOWED_TO_DEPENDS_ON_LIST.stream().noneMatch(frb -> frb.equalsIgnoreCase(subGroup)))
+                        .orElse(false))
                 .collect(toList());
 
         if (!forbiddenDependencies.isEmpty()) {
-            throw new GradleException(String.format("Bundle could depends only on: %s. There is forbidden dependencies: %s",
+            throw new GradleException(format("Bundle could depends only on: %s. There is forbidden dependencies: %s",
                     ALLOWED_TO_DEPENDS_ON_LIST.stream().collect(joining(", ")),
                     forbiddenDependencies.stream().map(DependencyHolder::toString).collect(joining(", "))
             ));
         }
     }
-
 
     private List<ServiceDescription> extractAllServicesFrom(String rootGroupName, File rootArtifactFile, List<DependencyHolder> dependencies) {
         // We use parent class loader because this plugin uses outside api sources.
@@ -212,5 +219,33 @@ public class BundlePackager implements Plugin<Project> {
                     return false;
                 })
                 .collect(toList());
+    }
+
+
+    private void checkDependenciesAgainst(Project project, List<DependencyHolder> dependencies, List<DependencyHolder> allApiDependencies) {
+        final String rootGroupName = Utils.lookUpRootGroupName(project);
+
+        final List<DependencyHolder> prjExternalDependencies = dependencies.stream()
+                .filter(d -> !StringUtils.startsWith(d.getGroup(), rootGroupName))
+                .collect(Collectors.toList());
+
+        final List<DependencyHolder> allApiExternalDependencies = allApiDependencies.stream()
+                .filter(d -> !StringUtils.startsWith(d.getGroup(), rootGroupName))
+                .collect(Collectors.toList());
+
+        for (final DependencyHolder prjDep : prjExternalDependencies) {
+            allApiExternalDependencies.stream()
+                    .filter(mDep -> Objects.equals(mDep.getGroup(), prjDep.getGroup()) &&
+                            Objects.equals(mDep.getName(), prjDep.getName()))
+                    .findFirst()
+                    .ifPresent(dependencyHolder -> {
+                        if (!Objects.equals(dependencyHolder.getVersion(), prjDep.getVersion())) {
+                            throw new GradleException(format("It is not allowed to use 3rd party dependencies from scope of all api subprojects and different version. " +
+                                            "Project \"%s\" has other version common dependency: \"%s\". Must be used %s!",
+                                    project.getPath(), prjDep, dependencyHolder.getVersion()));
+                        }
+                    });
+
+        }
     }
 }
