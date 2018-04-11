@@ -49,21 +49,21 @@ public class BundlePackager implements Plugin<Project> {
             final List<DependencyHolder> allApiDependencies = dependencyScanner.getResolvedDependenciesByType(STUFF_ALL_API);
             checkDependenciesAgainst(project, dependencies, allApiDependencies);
 
-            final List<DependencyHolder> prjApiDependencies = filterApiDependencies(dependencies);
-
-            final List<DependencyHolder> prjImplDependencies = Lists.newArrayList(dependencies);
-            prjImplDependencies.removeAll(prjApiDependencies);
-
+            final DependencyByCategories dependencyCollection = new DependencyByCategories(dependencies);
 
             //Bundle can export only services from api dependencies without services from transitive these api dependencies
             final List<DependencyHolder> resolvedByApiTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
             Utils.checkImportProjectsRestrictions(project, resolvedByApiTypeDependencies, ALLOWED_TO_DEPENDS_ON_LIST);
             final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), resolvedByApiTypeDependencies);
 
-            try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath())) {
+            try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath(), configuration.embeddedDependencies)) {
                 bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
-                bundleArchive.putApiDependencies(prjApiDependencies, configuration.embeddedDependencies);
-                bundleArchive.putImplDependencies(prjImplDependencies, configuration.embeddedDependencies);
+
+                bundleArchive.putApiDependencies(dependencyCollection.getApi());
+                bundleArchive.putCommonDependencies(dependencyCollection.getCommon());
+                bundleArchive.putExternalImplDependencies(dependencyCollection.getExternalImpl());
+                bundleArchive.putInternalImplDependencies(dependencyCollection.getInternalImpl());
+
                 bundleArchive.addServices(serviceDescriptions);
             } catch (Exception e) {
                 throw new GradleException("Could not change artifact: " + jarTask.getArchivePath().getAbsolutePath(), e);
@@ -178,23 +178,6 @@ public class BundlePackager implements Plugin<Project> {
                     .collect(toList());
         }
     }
-
-
-    private List<DependencyHolder> filterApiDependencies(List<DependencyHolder> dependencies) {
-        //1. any parent is api
-        //2. itself api
-        return dependencies.stream()
-                .filter(dep -> {
-                    for (; dep != null; dep = dep.getParent().orElse(null)) {
-                        if (dep.isNative() && SubProjectTypes.API == dep.getSubProjectType()) {
-                            return true;
-                        }
-                    }
-                    return false;
-                })
-                .collect(toList());
-    }
-
 
     private void checkDependenciesAgainst(Project project, List<DependencyHolder> dependencies, List<DependencyHolder> allApiDependencies) {
         final List<DependencyHolder> prjExternalDependencies = dependencies.stream()
