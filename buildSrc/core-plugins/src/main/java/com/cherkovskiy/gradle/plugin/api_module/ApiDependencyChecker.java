@@ -2,8 +2,9 @@ package com.cherkovskiy.gradle.plugin.api_module;
 
 import com.cherkovskiy.gradle.plugin.DependencyHolder;
 import com.cherkovskiy.gradle.plugin.DependencyScanner;
+import com.cherkovskiy.gradle.plugin.SubProjectTypes;
 import com.cherkovskiy.gradle.plugin.Utils;
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.collect.ImmutableSet;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -11,20 +12,29 @@ import org.gradle.api.Project;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
 public class ApiDependencyChecker implements Plugin<Project> {
+
+    private static final ImmutableSet<SubProjectTypes> ALLOWED_TO_DEPENDS_ON_LIST = new ImmutableSet.Builder<SubProjectTypes>()
+            .add(SubProjectTypes.API)
+            .build();
+
     @Override
     public void apply(Project project) {
 
         project.getTasks().getAt("assemble").doLast(task -> {
-            final String rootGroupName = Utils.lookUpRootGroupName(project);
+
             final DependencyScanner dependencyScanner = new DependencyScanner(project);
 
-            final List<DependencyHolder> prjExternalDependencies = dependencyScanner.getRuntimeDependencies().stream()
-                    .filter(d -> !StringUtils.startsWith(d.getGroup(), rootGroupName))
+            final List<DependencyHolder> dependencies = dependencyScanner.getRuntimeDependencies();
+            Utils.checkImportProjectsRestrictions(project, dependencies, ALLOWED_TO_DEPENDS_ON_LIST);
+
+            final List<DependencyHolder> prjExternalDependencies = dependencies.stream()
+                    .filter(((Predicate<DependencyHolder>) DependencyHolder::isNative).negate())
                     .collect(Collectors.toList());
 
             final List<DependencyHolder> managementDependencies = dependencyScanner.getManagementedDependencies();

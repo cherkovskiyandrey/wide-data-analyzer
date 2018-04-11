@@ -2,7 +2,7 @@ package com.cherkovskiy.gradle.plugin.bundle;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.gradle.plugin.*;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
@@ -19,23 +19,19 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRANSITIVE_OFF;
-import static com.cherkovskiy.gradle.plugin.DependencyType.API;
 import static com.cherkovskiy.gradle.plugin.DependencyType.STUFF_ALL_API;
 import static java.lang.String.format;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class BundlePackager implements Plugin<Project> {
-    private static final String ADI_DEPENDENCY_GROUP = "api";
-    private static final ImmutableList<String> ALLOWED_TO_DEPENDS_ON_LIST = new ImmutableList.Builder<String>()
-            .add("api")
-            .add("common")
+    private static final ImmutableSet<SubProjectTypes> ALLOWED_TO_DEPENDS_ON_LIST = new ImmutableSet.Builder<SubProjectTypes>()
+            .add(SubProjectTypes.API)
+            .add(SubProjectTypes.COMMON)
             .build();
 
     @Override
@@ -46,15 +42,14 @@ public class BundlePackager implements Plugin<Project> {
 
         project.getTasks().getAt("build").doLast(task -> {
             final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
-            final String rootGroupName = Utils.lookUpRootGroupName(project);
 
             final DependencyScanner dependencyScanner = new DependencyScanner(project);
             final List<DependencyHolder> dependencies = dependencyScanner.getRuntimeDependencies();
-            final List<DependencyHolder> allApiDependencies = dependencyScanner.getResolvedDependenciesByType(STUFF_ALL_API);
 
+            final List<DependencyHolder> allApiDependencies = dependencyScanner.getResolvedDependenciesByType(STUFF_ALL_API);
             checkDependenciesAgainst(project, dependencies, allApiDependencies);
 
-            final List<DependencyHolder> prjApiDependencies = filterApiDependencies(dependencies, rootGroupName);
+            final List<DependencyHolder> prjApiDependencies = filterApiDependencies(dependencies);
 
             final List<DependencyHolder> prjImplDependencies = Lists.newArrayList(dependencies);
             prjImplDependencies.removeAll(prjApiDependencies);
@@ -62,8 +57,8 @@ public class BundlePackager implements Plugin<Project> {
 
             //Bundle can export only services from api dependencies without services from transitive these api dependencies
             final List<DependencyHolder> resolvedByApiTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
-            checkImportRestrictions(rootGroupName, resolvedByApiTypeDependencies);
-            final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(rootGroupName, jarTask.getArchivePath(), resolvedByApiTypeDependencies);
+            Utils.checkImportProjectsRestrictions(project, resolvedByApiTypeDependencies, ALLOWED_TO_DEPENDS_ON_LIST);
+            final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), resolvedByApiTypeDependencies);
 
             try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath())) {
                 bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
@@ -84,22 +79,7 @@ public class BundlePackager implements Plugin<Project> {
                         .collect(Collectors.toSet())));
     }
 
-    private void checkImportRestrictions(@Nonnull String rootGroupName, @Nonnull List<DependencyHolder> dependencies) {
-        final List<DependencyHolder> forbiddenDependencies = dependencies.stream()
-                .filter(dep -> Utils.subProjectAgainst(dep.getGroup(), rootGroupName)
-                        .map(subGroup -> ALLOWED_TO_DEPENDS_ON_LIST.stream().noneMatch(frb -> frb.equalsIgnoreCase(subGroup)))
-                        .orElse(false))
-                .collect(toList());
-
-        if (!forbiddenDependencies.isEmpty()) {
-            throw new GradleException(format("Bundle could depends only on: %s. There is forbidden dependencies: %s",
-                    ALLOWED_TO_DEPENDS_ON_LIST.stream().collect(joining(", ")),
-                    forbiddenDependencies.stream().map(DependencyHolder::toString).collect(joining(", "))
-            ));
-        }
-    }
-
-    private List<ServiceDescription> extractAllServicesFrom(String rootGroupName, File rootArtifactFile, List<DependencyHolder> dependencies) {
+    private List<ServiceDescription> extractAllServicesFrom(File rootArtifactFile, List<DependencyHolder> dependencies) {
         // We use parent class loader because this plugin uses outside api sources.
         // URLClassLoader has to load Service class from current loader.
         final ServicesClassLoader classLoader = new ServicesClassLoader(rootArtifactFile, dependencies, Thread.currentThread().getContextClassLoader());
@@ -111,7 +91,7 @@ public class BundlePackager implements Plugin<Project> {
                             .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
                             .filter(cls -> cls.isAnnotationPresent(Service.class))
                             .peek(this::checkClassRestrictions)
-                            .map(cls -> toServiceDescription(cls, classLoader, rootGroupName))
+                            .map(cls -> toServiceDescription(cls, classLoader))
                             .collect(toList())
                     , ClassNotFoundException.class);
 
@@ -141,7 +121,7 @@ public class BundlePackager implements Plugin<Project> {
         }
     }
 
-    private ServiceDescription toServiceDescription(Class<?> cls, ServicesClassLoader classLoader, String rootGroupName) {
+    private ServiceDescription toServiceDescription(Class<?> cls, ServicesClassLoader classLoader) {
         final List<Class<?>> implInterfaces = Lists.newArrayList();
         walkClass(cls, implInterfaces);
 
@@ -160,7 +140,7 @@ public class BundlePackager implements Plugin<Project> {
 
         implInterfaces.forEach(i -> {
             final boolean isApiDependency = classLoader.getDependencyHolder(i)
-                    .map(dh -> isApiDependency(rootGroupName, dh))
+                    .map(this::isApiDependency)
                     .orElse(false);
 
             builder.addInterface(i.getName(), isApiDependency ? ServiceDescription.AccessType.PUBLIC : ServiceDescription.AccessType.PRIVATE);
@@ -170,14 +150,10 @@ public class BundlePackager implements Plugin<Project> {
     }
 
 
-    private boolean isApiDependency(@Nonnull String rootGroupName, DependencyHolder apiDependency) {
-        final String group = apiDependency.getGroup();
-
-        return Utils.subProjectAgainst(group, rootGroupName)
-                .map(pg ->
-                        ADI_DEPENDENCY_GROUP.equalsIgnoreCase(pg) &&
-                                apiDependency.getType() == API) //TRANSITIVE_OFF - get only first level api dependencies
-                .orElse(false);
+    private boolean isApiDependency(@Nonnull DependencyHolder apiDependency) {
+        return apiDependency.isNative() &&
+                DependencyType.API.equals(apiDependency.getType()) &&
+                SubProjectTypes.API.equals(apiDependency.getSubProjectType());  //TRANSITIVE_OFF - get only first level api dependencies
     }
 
     private void walkClass(Class<?> cls, List<Class<?>> implInterfaces) {
@@ -204,15 +180,13 @@ public class BundlePackager implements Plugin<Project> {
     }
 
 
-    private List<DependencyHolder> filterApiDependencies(List<DependencyHolder> dependencies, @Nonnull String rootGroupName) {
+    private List<DependencyHolder> filterApiDependencies(List<DependencyHolder> dependencies) {
         //1. any parent is api
         //2. itself api
         return dependencies.stream()
                 .filter(dep -> {
-                    for (Optional<DependencyHolder> d = Optional.of(dep); d.isPresent(); d = d.flatMap(DependencyHolder::getParent)) {
-                        if (Utils.subProjectAgainst(d.get().getGroup(), rootGroupName)
-                                .map(ADI_DEPENDENCY_GROUP::equalsIgnoreCase)
-                                .orElse(false)) {
+                    for (; dep != null; dep = dep.getParent().orElse(null)) {
+                        if (dep.isNative() && SubProjectTypes.API == dep.getSubProjectType()) {
                             return true;
                         }
                     }
@@ -223,14 +197,12 @@ public class BundlePackager implements Plugin<Project> {
 
 
     private void checkDependenciesAgainst(Project project, List<DependencyHolder> dependencies, List<DependencyHolder> allApiDependencies) {
-        final String rootGroupName = Utils.lookUpRootGroupName(project);
-
         final List<DependencyHolder> prjExternalDependencies = dependencies.stream()
-                .filter(d -> !StringUtils.startsWith(d.getGroup(), rootGroupName))
+                .filter(d -> !d.isNative())
                 .collect(Collectors.toList());
 
         final List<DependencyHolder> allApiExternalDependencies = allApiDependencies.stream()
-                .filter(d -> !StringUtils.startsWith(d.getGroup(), rootGroupName))
+                .filter(d -> !d.isNative())
                 .collect(Collectors.toList());
 
         for (final DependencyHolder prjDep : prjExternalDependencies) {

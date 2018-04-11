@@ -1,4 +1,4 @@
-group 'com.cherkovskiy'
+group 'com.cherkovskiy.core'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'

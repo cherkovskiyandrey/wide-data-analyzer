@@ -1,6 +1,9 @@
 package com.cherkovskiy.gradle.plugin;
 
+import org.apache.commons.lang3.StringUtils;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.List;
 import java.util.Objects;
@@ -62,6 +65,21 @@ public class DependencyHolder {
 
     public boolean isTransitive() {
         return parent != null;
+    }
+
+    /**
+     * If dependency belongs to product.
+     * (either or exists into current project or as external dependency from other team in scope of this product)
+     *
+     * @return
+     */
+    public boolean isNative() {
+        return StringUtils.startsWith(group, SubProjectTypes.CORE_PROJECT_GROUP);
+    }
+
+    @Nullable
+    public SubProjectTypes getSubProjectType() {
+        return Utils.subProjectAgainst(group, SubProjectTypes.CORE_PROJECT_GROUP).map(SubProjectTypes::fromString).orElse(null);
     }
 
     /**

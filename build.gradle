@@ -8,7 +8,7 @@ allprojects {
     }
 
     apply plugin: 'java-library'
-    apply plugin: 'dependency-management'
+    apply plugin: 'common-validator'
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8

@@ -1,4 +1,4 @@
-group 'com.cherkovskiy'
+group 'com.cherkovskiy.common'
 version '1.0-SNAPSHOT'
 
 dependencies {
