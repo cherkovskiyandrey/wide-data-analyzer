@@ -16,7 +16,7 @@ public class DependencyHolder {
     private final String name;
     private final String version;
     private final List<File> files;
-    private final DependencyType type;
+    private final ConfigurationTypes type;
     private final DependencyHolder parent;
     private final DependencyHolder root;
 
@@ -24,7 +24,7 @@ public class DependencyHolder {
         this.group = builder.group;
         this.name = builder.name;
         this.version = builder.version;
-        this.files = builder.file;
+        this.files = builder.files;
         this.type = builder.type;
         this.parent = builder.parent;
         this.root = parent != null ? parent.getRoot() : this;
@@ -51,7 +51,7 @@ public class DependencyHolder {
     }
 
     @Nonnull
-    public DependencyType getType() {
+    public ConfigurationTypes getConfigurationType() {
         return type;
     }
 
@@ -79,7 +79,7 @@ public class DependencyHolder {
 
     @Nullable
     public SubProjectTypes getSubProjectType() {
-        return Utils.subProjectAgainst(group, SubProjectTypes.CORE_PROJECT_GROUP).map(SubProjectTypes::fromString).orElse(null);
+        return Utils.subProjectAgainst(group, SubProjectTypes.CORE_PROJECT_GROUP).map(SubProjectTypes::ofSubGroupName).orElse(null);
     }
 
     /**
@@ -105,12 +105,31 @@ public class DependencyHolder {
         return result.toString();
     }
 
+    public boolean isSame(DependencyHolder dep) {
+        return Objects.equals(dep.getGroup(), getGroup()) &&
+                Objects.equals(dep.getName(), getName()) &&
+                Objects.equals(dep.getVersion(), getVersion());
+    }
+
+    public DependencyDescriptor descriptor() {
+        return new DependencyDescriptor(getGroup(), getName(), getVersion(), getArtifacts().stream()
+                .filter(DependencyHolder::isArchive)
+                .map(File::getName)
+                .findFirst()
+                .orElse(null)
+        );
+    }
+
+    public static boolean isArchive(File file) {
+        return file.getAbsolutePath().endsWith(".jar") || file.getAbsolutePath().endsWith(".war");
+    }
+
     public static class Builder {
         private String group;
         private String name;
         private String version;
-        private List<File> file;
-        private DependencyType type;
+        private List<File> files;
+        private ConfigurationTypes type;
         private DependencyHolder parent;
 
         public Builder setGroup(String group) {
@@ -128,12 +147,12 @@ public class DependencyHolder {
             return this;
         }
 
-        public Builder setFile(List<File> file) {
-            this.file = file;
+        public Builder setFiles(List<File> files) {
+            this.files = files;
             return this;
         }
 
-        public Builder setType(DependencyType type) {
+        public Builder setConfigurationType(ConfigurationTypes type) {
             this.type = type;
             return this;
         }
@@ -147,7 +166,7 @@ public class DependencyHolder {
             this.group = orig.group;
             this.name = orig.name;
             this.version = orig.version;
-            this.file = orig.files;
+            this.files = orig.files;
             this.type = orig.type;
             this.parent = orig.parent;
             return this;

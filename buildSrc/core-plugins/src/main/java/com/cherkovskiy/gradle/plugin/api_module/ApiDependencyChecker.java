@@ -16,6 +16,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static org.gradle.language.base.plugins.LifecycleBasePlugin.ASSEMBLE_TASK_NAME;
 
 public class ApiDependencyChecker implements Plugin<Project> {
 
@@ -26,7 +27,7 @@ public class ApiDependencyChecker implements Plugin<Project> {
     @Override
     public void apply(Project project) {
 
-        project.getTasks().getAt("assemble").doLast(task -> {
+        project.getTasks().getAt(ASSEMBLE_TASK_NAME).doLast(task -> {
 
             final DependencyScanner dependencyScanner = new DependencyScanner(project);
 

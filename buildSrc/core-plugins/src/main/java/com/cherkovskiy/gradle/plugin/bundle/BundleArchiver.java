@@ -1,7 +1,8 @@
 package com.cherkovskiy.gradle.plugin.bundle;
 
+import com.cherkovskiy.gradle.plugin.DependencyDescriptor;
 import com.cherkovskiy.gradle.plugin.DependencyHolder;
-import com.cherkovskiy.gradle.plugin.ServiceDescription;
+import com.cherkovskiy.gradle.plugin.ServiceDescriptor;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
 import com.google.common.collect.Sets;
@@ -33,12 +34,14 @@ class BundleArchiver implements Closeable {
     private final boolean isEmbedded;
     private final JarDirectoryAdapter jarFile;
     private final Manifest manifest;
-    private final Set<ServiceDescription> serviceDescriptions = Sets.newHashSet();
-    private final Map<DependencyGroup, Set<String>> depGroupToDepsName = Arrays.stream(DependencyGroup.values())
+    private final Set<ServiceDescriptor> serviceDescriptions = Sets.newHashSet();
+    private final Map<DependencyGroup, Set<DependencyDescriptor>> depGroupToManifestStr = Arrays.stream(DependencyGroup.values())
             .collect(Collectors.toMap(Function.identity(), dg -> Sets.newHashSet()));
 
+
     private enum DependencyGroup {
-        API("WDA-Bundle-Api-Dependencies", "embedded/api/"),
+        API_EXPORT("WDA-Bundle-Api-Export-Dependencies", "embedded/api/"),
+        API_IMPORT("WDA-Bundle-Api-Import-Dependencies", "embedded/api/"),
         COMMON("WDA-Bundle-Common-Dependencies", "embedded/libs/common/"),
         IMPL_INTERNAL("WDA-Bundle-Impl-Internal-Dependencies", "embedded/libs/wda/"),
         IMPL_EXTERNAL("WDA-Bundle-Impl-External-Dependencies", "embedded/libs/"),;
@@ -59,7 +62,6 @@ class BundleArchiver implements Closeable {
             return path;
         }
     }
-
 
     public BundleArchiver(File archivePath, boolean isEmbedded) {
         this.jarFile = new JarDirectoryAdapter(DirectoryFactory.defaultInstance().tryDetectAndOpen(archivePath.getAbsolutePath(), false));
@@ -83,8 +85,13 @@ class BundleArchiver implements Closeable {
         attributes.put(new Attributes.Name(BUNDLE_VERSION), bundleVersion);
     }
 
-    public void putApiDependencies(List<DependencyHolder> dependencies) throws IOException {
-        putDependencies(dependencies, DependencyGroup.API);
+    public void putApiExportDependencies(List<DependencyHolder> dependencies) throws IOException {
+        putDependencies(dependencies, DependencyGroup.API_EXPORT);
+    }
+
+
+    public void putApiImportDependencies(List<DependencyHolder> dependencies) throws IOException {
+        putDependencies(dependencies, DependencyGroup.API_IMPORT);
     }
 
     public void putCommonDependencies(List<DependencyHolder> dependencies) throws IOException {
@@ -101,16 +108,18 @@ class BundleArchiver implements Closeable {
     }
 
     private void putDependencies(List<DependencyHolder> dependencies, DependencyGroup dependencyGroup) throws IOException {
-
         final Set<File> depArchives = dependencies.stream()
                 .map(d -> d.getArtifacts().stream()
-                        .filter(this::isArchive)
+                        .filter(DependencyHolder::isArchive)
                         .findFirst()
                         .orElseThrow(() -> new GradleException(format("Dependency artifact %s could not be resolved as archive!", d))))
                 .distinct()
                 .collect(Collectors.toSet());
 
-        depGroupToDepsName.get(dependencyGroup).addAll(depArchives.stream().map(File::getName).collect(Collectors.toSet()));
+        depGroupToManifestStr.get(dependencyGroup).addAll(dependencies.stream()
+                .map(DependencyHolder::descriptor)
+                .collect(Collectors.toSet())
+        );
 
         if (isEmbedded) {
             for (File dep : depArchives) {
@@ -121,11 +130,7 @@ class BundleArchiver implements Closeable {
         }
     }
 
-    private boolean isArchive(File file) {
-        return file.getAbsolutePath().endsWith(".jar") || file.getAbsolutePath().endsWith(".war");
-    }
-
-    public void addServices(List<ServiceDescription> serviceDescriptions) {
+    public void addServices(List<ServiceDescriptor> serviceDescriptions) {
         this.serviceDescriptions.addAll(serviceDescriptions);
     }
 
@@ -134,14 +139,17 @@ class BundleArchiver implements Closeable {
         final Attributes attributes = manifest.getMainAttributes();
 
         final String services = serviceDescriptions.stream()
-                .map(ServiceDescription::toManifestCompatibleString)
-                .collect(joining(";"));
+                .map(ServiceDescriptor::toManifestCompatibleString)
+                .collect(joining(ServiceDescriptor.GROUP_SEPARATOR));
         attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
 
-        for (Map.Entry<DependencyGroup, Set<String>> entry : depGroupToDepsName.entrySet()) {
-            final String allApiDependencies = entry.getValue().stream().collect(Collectors.joining(","));
-            attributes.put(new Attributes.Name(entry.getKey().getAttributeName()), allApiDependencies);
+        for (Map.Entry<DependencyGroup, Set<DependencyDescriptor>> entry : depGroupToManifestStr.entrySet()) {
+            final String manifestStr = entry.getValue().stream()
+                    .map(DependencyDescriptor::toManifestCompatibleString)
+                    .collect(Collectors.joining(DependencyDescriptor.GROUP_SEPARATOR));
+            attributes.put(new Attributes.Name(entry.getKey().getAttributeName()), manifestStr);
         }
+
         jarFile.setManifest(manifest);
 
         jarFile.close();

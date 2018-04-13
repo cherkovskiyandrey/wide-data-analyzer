@@ -14,13 +14,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 //TODO: move to common:application-context-common ???? нужно подождать как напишу плагин сборки плагинов - что там будет в манифесте - из него мы ведь будем читать
-public class ServiceDescription {
+public class ServiceDescriptor {
 
     public enum AccessType {
         PUBLIC,
         PRIVATE,
     }
 
+    public static final String GROUP_SEPARATOR = ";";
     public static final String SERVICE_IMPL_NAME = "class=>";
     public static final String SERVICE_NAME = "name=>";
     public static final String TYPE = "type=>";
@@ -47,7 +48,7 @@ public class ServiceDescription {
     private final Service.InitType initType;
     private final Map<String, AccessType> interfaces;
 
-    private ServiceDescription(Builder builder) {
+    private ServiceDescriptor(Builder builder) {
         this.serviceImplName = builder.serviceImplName;
         this.serviceName = builder.serviceName;
         this.type = builder.type;
@@ -76,7 +77,7 @@ public class ServiceDescription {
         return stringBuilder.toString();
     }
 
-    public static ServiceDescription fromManifestString(String serviceDescAsStr) {
+    public static ServiceDescriptor fromManifestString(String serviceDescAsStr) {
         Matcher matcher = MAVEN_PATTERN.matcher(serviceDescAsStr);
 
         if (!matcher.matches()) {
@@ -134,7 +135,7 @@ public class ServiceDescription {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ServiceDescription that = (ServiceDescription) o;
+        ServiceDescriptor that = (ServiceDescriptor) o;
 
         return Objects.equals(serviceImplName, that.serviceImplName) &&
                 Objects.equals(serviceName, that.serviceName) &&
@@ -181,11 +182,11 @@ public class ServiceDescription {
         }
 
         @Nonnull
-        public ServiceDescription build() {
+        public ServiceDescriptor build() {
             if (StringUtils.isBlank(serviceImplName)) {
                 throw new IllegalArgumentException("serviceImplName is empty!");
             }
-            return new ServiceDescription(this);
+            return new ServiceDescriptor(this);
         }
     }
 }

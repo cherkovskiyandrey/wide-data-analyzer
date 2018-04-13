@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.jvm.tasks.Jar;
 import org.slieb.throwables.FunctionWithThrowable;
 import org.slieb.throwables.SuppressedException;
@@ -23,8 +24,7 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
-import static com.cherkovskiy.gradle.plugin.DependencyScanner.TransitiveMode.TRANSITIVE_OFF;
-import static com.cherkovskiy.gradle.plugin.DependencyType.STUFF_ALL_API;
+import static com.cherkovskiy.gradle.plugin.ConfigurationTypes.STUFF_ALL_API;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
@@ -38,28 +38,30 @@ public class BundlePackager implements Plugin<Project> {
     public void apply(@Nonnull Project project) {
         final BundlePackagerConfiguration configuration = project.getExtensions().create(BundlePackagerConfiguration.NAME, BundlePackagerConfiguration.class);
 
-        createAndInitStuffApiConfig(project);
+        //Without init, means don't make configuration depends on tasks from api projects.
+        createAndPopulateStuffApiConfig(project);
 
-        project.getTasks().getAt("build").doLast(task -> {
+        project.getTasks().getAt(JavaBasePlugin.BUILD_TASK_NAME).doLast(task -> {
             final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
 
             final DependencyScanner dependencyScanner = new DependencyScanner(project);
-            final List<DependencyHolder> dependencies = dependencyScanner.getRuntimeDependencies();
-
+            final List<DependencyHolder> runtimeConfDependencies = dependencyScanner.getRuntimeDependencies();
             final List<DependencyHolder> allApiDependencies = dependencyScanner.getResolvedDependenciesByType(STUFF_ALL_API);
-            checkDependenciesAgainst(project, dependencies, allApiDependencies);
 
-            final DependencyByCategories dependencyCollection = new DependencyByCategories(dependencies);
+            Utils.checkImportProjectsRestrictions(project, runtimeConfDependencies, ALLOWED_TO_DEPENDS_ON_LIST);
+            checkDependenciesAgainst(project, runtimeConfDependencies, allApiDependencies);
+
+            final List<DependencyHolder> apiConfDependencies = dependencyScanner.getDependenciesByType(ConfigurationTypes.API);
+            final BundleDependencies dependencyCollection = new NativeBundleDependencies(runtimeConfDependencies, apiConfDependencies);
 
             //Bundle can export only services from api dependencies without services from transitive these api dependencies
-            final List<DependencyHolder> resolvedByApiTypeDependencies = dependencyScanner.resolveAgainst(dependencies, DependencyType.API, TRANSITIVE_OFF);
-            Utils.checkImportProjectsRestrictions(project, resolvedByApiTypeDependencies, ALLOWED_TO_DEPENDS_ON_LIST);
-            final List<ServiceDescription> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), resolvedByApiTypeDependencies);
+            final List<ServiceDescriptor> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), dependencyCollection);
 
             try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath(), configuration.embeddedDependencies)) {
                 bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
 
-                bundleArchive.putApiDependencies(dependencyCollection.getApi());
+                bundleArchive.putApiExportDependencies(dependencyCollection.getApiExport());
+                bundleArchive.putApiImportDependencies(dependencyCollection.getApiImport());
                 bundleArchive.putCommonDependencies(dependencyCollection.getCommon());
                 bundleArchive.putExternalImplDependencies(dependencyCollection.getExternalImpl());
                 bundleArchive.putInternalImplDependencies(dependencyCollection.getInternalImpl());
@@ -71,18 +73,18 @@ public class BundlePackager implements Plugin<Project> {
         });
     }
 
-    private void createAndInitStuffApiConfig(Project project) {
+    private void createAndPopulateStuffApiConfig(Project project) {
         project.getConfigurations().create(STUFF_ALL_API.getGradleString(), conf -> conf.getDependencies().addAll(
                 project.getRootProject().getSubprojects().stream()
-                        .filter(sp -> sp.getPath().contains(":api:"))
+                        .filter(sp -> SubProjectTypes.API.isSupportedPath(sp.getPath()))
                         .map(project.getDependencies()::create)
                         .collect(Collectors.toSet())));
     }
 
-    private List<ServiceDescription> extractAllServicesFrom(File rootArtifactFile, List<DependencyHolder> dependencies) {
+    private List<ServiceDescriptor> extractAllServicesFrom(File rootArtifactFile, BundleDependencies dependencies) {
         // We use parent class loader because this plugin uses outside api sources.
         // URLClassLoader has to load Service class from current loader.
-        final ServicesClassLoader classLoader = new ServicesClassLoader(rootArtifactFile, dependencies, Thread.currentThread().getContextClassLoader());
+        final ServicesClassLoader classLoader = new ServicesClassLoader(rootArtifactFile, dependencies.getAll(), Thread.currentThread().getContextClassLoader());
 
         try {
             final List<String> allClasses = getAllClassesName(rootArtifactFile);
@@ -91,7 +93,7 @@ public class BundlePackager implements Plugin<Project> {
                             .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
                             .filter(cls -> cls.isAnnotationPresent(Service.class))
                             .peek(this::checkClassRestrictions)
-                            .map(cls -> toServiceDescription(cls, classLoader))
+                            .map(cls -> toServiceDescription(cls, dependencies, classLoader))
                             .collect(toList())
                     , ClassNotFoundException.class);
 
@@ -121,7 +123,7 @@ public class BundlePackager implements Plugin<Project> {
         }
     }
 
-    private ServiceDescription toServiceDescription(Class<?> cls, ServicesClassLoader classLoader) {
+    private ServiceDescriptor toServiceDescription(Class<?> cls, BundleDependencies dependencies, ServicesClassLoader classLoader) {
         final List<Class<?>> implInterfaces = Lists.newArrayList();
         walkClass(cls, implInterfaces);
 
@@ -132,7 +134,7 @@ public class BundlePackager implements Plugin<Project> {
         final Service.Type type = service.type();
         final Service.InitType initType = service.initType();
 
-        final ServiceDescription.Builder builder = ServiceDescription.builder()
+        final ServiceDescriptor.Builder builder = ServiceDescriptor.builder()
                 .setServiceImplName(cls.getName())
                 .setServiceName(name)
                 .setType(type)
@@ -140,20 +142,13 @@ public class BundlePackager implements Plugin<Project> {
 
         implInterfaces.forEach(i -> {
             final boolean isApiDependency = classLoader.getDependencyHolder(i)
-                    .map(this::isApiDependency)
+                    .map(dependencies::isApiExport)
                     .orElse(false);
 
-            builder.addInterface(i.getName(), isApiDependency ? ServiceDescription.AccessType.PUBLIC : ServiceDescription.AccessType.PRIVATE);
+            builder.addInterface(i.getName(), isApiDependency ? ServiceDescriptor.AccessType.PUBLIC : ServiceDescriptor.AccessType.PRIVATE);
         });
 
         return builder.build();
-    }
-
-
-    private boolean isApiDependency(@Nonnull DependencyHolder apiDependency) {
-        return apiDependency.isNative() &&
-                DependencyType.API.equals(apiDependency.getType()) &&
-                SubProjectTypes.API.equals(apiDependency.getSubProjectType());  //TRANSITIVE_OFF - get only first level api dependencies
     }
 
     private void walkClass(Class<?> cls, List<Class<?>> implInterfaces) {

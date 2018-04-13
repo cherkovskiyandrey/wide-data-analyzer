@@ -35,7 +35,7 @@ public class Utils {
         if (!forbiddenDependencies.isEmpty()) {
             throw new GradleException(format("%s could depends only on: %s. There is forbidden dependencies: %s",
                     project.getPath(),
-                    allowedSubProjects.stream().map(SubProjectTypes::asString).collect(joining(", ")),
+                    allowedSubProjects.stream().map(SubProjectTypes::getSubGroupName).collect(joining(", ")),
                     forbiddenDependencies.stream().map(DependencyHolder::toString).collect(joining(", "))
             ));
         }

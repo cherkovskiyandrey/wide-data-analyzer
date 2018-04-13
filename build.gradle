@@ -39,7 +39,3 @@ configure(subprojects.findAll {
 }
 
 apply from: file('dependencies.gradle')
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-}

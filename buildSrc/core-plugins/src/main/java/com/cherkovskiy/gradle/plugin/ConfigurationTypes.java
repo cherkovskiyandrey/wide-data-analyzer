@@ -7,7 +7,7 @@ import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;
 
-public enum DependencyType {
+public enum ConfigurationTypes {
 
     //From java library plugin
     API("api", false),
@@ -32,19 +32,19 @@ public enum DependencyType {
     //Not interested dependencies
     UNKNOWN("unknown", false);
 
-    private final static ImmutableMap<String, DependencyType> STR_TO_TYPE = new ImmutableMap.Builder<String, DependencyType>()
+    private final static ImmutableMap<String, ConfigurationTypes> STR_TO_TYPE = new ImmutableMap.Builder<String, ConfigurationTypes>()
             .putAll(Arrays.stream(values()).collect(toMap(t -> t.gradleStr, Function.identity(), (l, r) -> l)))
             .build();
 
     private final String gradleStr;
     private final boolean couldBeResolved;
 
-    DependencyType(String gradleStr, boolean couldBeResolved) {
+    ConfigurationTypes(String gradleStr, boolean couldBeResolved) {
         this.gradleStr = gradleStr;
         this.couldBeResolved = couldBeResolved;
     }
 
-    public static DependencyType of(String gradleStr) {
+    public static ConfigurationTypes of(String gradleStr) {
         return STR_TO_TYPE.getOrDefault(gradleStr, UNKNOWN);
     }
 

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import static com.cherkovskiy.gradle.plugin.SubProjectTypes.CORE_PROJECT_GROUP;
 import static java.lang.String.format;
+import static org.gradle.language.base.plugins.LifecycleBasePlugin.ASSEMBLE_TASK_NAME;
 
 public class CommonValidator implements Plugin<Project> {
 
@@ -57,9 +58,16 @@ public class CommonValidator implements Plugin<Project> {
                     }
 
                     final Optional<String> projectTypeStr = Utils.subProjectAgainst(projectGroup, rootGroupName);
-                    if (!projectTypeStr.isPresent() || Objects.isNull(SubProjectTypes.fromString(projectTypeStr.get()))) {
-                        throw new GradleException(format("Unsupported subproject group name %s for %s. " +
-                                "Use only %s!", projectGroup, project.getPath(), SubProjectTypes.STR_TO_TYPE.keySet().stream().collect(Collectors.joining(", "))));
+                    SubProjectTypes projectType;
+                    if (!projectTypeStr.isPresent() || Objects.isNull(projectType = SubProjectTypes.ofSubGroupName(projectTypeStr.get()))) {
+                        throw new GradleException(format("Unsupported subproject group name %s for %s. Use only %s!",
+                                projectGroup, project.getPath(), SubProjectTypes.SUB_GROUP_NAME_TO_TYPE.keySet().stream().collect(Collectors.joining(", "))));
+                    }
+
+                    final String projectPath = project.getPath();
+                    if (!projectType.isSupportedPath(projectPath)) {
+                        throw new GradleException(format("Unsupported subproject path %s. Use only project path according to patterns: %s!",
+                                projectPath, SubProjectTypes.PATH_TEMPLATE_TO_TYPE.keySet().stream().collect(Collectors.joining(", "))));
                     }
                 }
             }
@@ -69,7 +77,7 @@ public class CommonValidator implements Plugin<Project> {
             }
         });
 
-        project.getTasks().getAt("assemble").doLast(task -> {
+        project.getTasks().getAt(ASSEMBLE_TASK_NAME).doLast(task -> {
             final DependencyScanner dependencyScanner = new DependencyScanner(project);
 
             final List<DependencyHolder> prjExternalDependencies = dependencyScanner.getRuntimeDependencies().stream()

@@ -6,24 +6,24 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.cherkovskiy.gradle.plugin.ServiceDescription.*;
+import static com.cherkovskiy.gradle.plugin.ServiceDescriptor.*;
 import static junit.framework.TestCase.assertEquals;
 
 public class ServiceDescriptionTest {
 
-    private final ServiceDescription serviceDescription = ServiceDescription.builder()
+    private final ServiceDescriptor serviceDescription = ServiceDescriptor.builder()
             .setServiceImplName(Object.class.getName())
             .setServiceName("SOME_NAME")
             .setInitType(Service.InitType.LAZY)
             .setType(Service.Type.PROTOTYPE)
-            .addInterface(Runnable.class.getName(), ServiceDescription.AccessType.PRIVATE)
-            .addInterface(Serializable.class.getName(), ServiceDescription.AccessType.PUBLIC)
+            .addInterface(Runnable.class.getName(), ServiceDescriptor.AccessType.PRIVATE)
+            .addInterface(Serializable.class.getName(), ServiceDescriptor.AccessType.PUBLIC)
             .build();
 
     @Test
     public void toFromManifestTest() throws IOException {
         final String str = serviceDescription.toManifestCompatibleString();
-        final ServiceDescription serviceDescription2 = ServiceDescription.fromManifestString(str);
+        final ServiceDescriptor serviceDescription2 = ServiceDescriptor.fromManifestString(str);
 //
 //        Files.write(Paths.get("lllllll.test"), str.getBytes(StandardCharsets.UTF_8));
 
@@ -39,13 +39,13 @@ public class ServiceDescriptionTest {
                 INTERFACES + "[" +
 
                 CLASS + Serializable.class.getName() + "," +
-                ACCESS_TYPE + ServiceDescription.AccessType.PUBLIC + "," +
+                ACCESS_TYPE + ServiceDescriptor.AccessType.PUBLIC + "," +
 
                 CLASS + Runnable.class.getName() + "," +
-                ACCESS_TYPE + ServiceDescription.AccessType.PRIVATE + "," +
+                ACCESS_TYPE + ServiceDescriptor.AccessType.PRIVATE + "," +
                 "]";
 
-        final ServiceDescription serviceDescription2 = ServiceDescription.fromManifestString(manifestStr);
+        final ServiceDescriptor serviceDescription2 = ServiceDescriptor.fromManifestString(manifestStr);
         assertEquals(serviceDescription, serviceDescription2);
     }
 
