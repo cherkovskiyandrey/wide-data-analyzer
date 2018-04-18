@@ -1,6 +1,7 @@
 package com.cherkovskiy.gradle.plugin;
 
 import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.GradleException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -8,6 +9,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import static java.lang.String.format;
 
 //Don't override equals and hashcode - DependencyScanner assume these methods are default
 public class DependencyHolder {
@@ -111,13 +114,12 @@ public class DependencyHolder {
                 Objects.equals(dep.getVersion(), getVersion());
     }
 
-    public DependencyDescriptor descriptor() {
-        return new DependencyDescriptor(getGroup(), getName(), getVersion(), getArtifacts().stream()
+    public ManifestArtifact descriptor() {
+        return new ManifestArtifact(getGroup(), getName(), getVersion(), getArtifacts().stream()
                 .filter(DependencyHolder::isArchive)
                 .map(File::getName)
                 .findFirst()
-                .orElse(null)
-        );
+                .orElseThrow(() -> new GradleException(format("Dependency artifact %s could not be resolved as archive!", this))));
     }
 
     public static boolean isArchive(File file) {

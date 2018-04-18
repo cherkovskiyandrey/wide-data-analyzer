@@ -63,12 +63,6 @@ public class CommonValidator implements Plugin<Project> {
                         throw new GradleException(format("Unsupported subproject group name %s for %s. Use only %s!",
                                 projectGroup, project.getPath(), SubProjectTypes.SUB_GROUP_NAME_TO_TYPE.keySet().stream().collect(Collectors.joining(", "))));
                     }
-
-                    final String projectPath = project.getPath();
-                    if (!projectType.isSupportedPath(projectPath)) {
-                        throw new GradleException(format("Unsupported subproject path %s. Use only project path according to patterns: %s!",
-                                projectPath, SubProjectTypes.PATH_TEMPLATE_TO_TYPE.keySet().stream().collect(Collectors.joining(", "))));
-                    }
                 }
             }
 

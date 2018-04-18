@@ -57,7 +57,7 @@ public class ServiceDescriptor {
     }
 
     @Nonnull
-    public String toManifestCompatibleString() {
+    public String toManifestString() {
         final StringBuilder stringBuilder = new StringBuilder(1024);
 
         stringBuilder.append(SERVICE_IMPL_NAME).append(serviceImplName).append(",");

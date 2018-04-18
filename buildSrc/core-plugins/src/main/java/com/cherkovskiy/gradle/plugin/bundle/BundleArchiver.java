@@ -1,6 +1,7 @@
 package com.cherkovskiy.gradle.plugin.bundle;
 
-import com.cherkovskiy.gradle.plugin.DependencyDescriptor;
+import com.cherkovskiy.gradle.plugin.DependencyGroup;
+import com.cherkovskiy.gradle.plugin.ManifestArtifact;
 import com.cherkovskiy.gradle.plugin.DependencyHolder;
 import com.cherkovskiy.gradle.plugin.ServiceDescriptor;
 import com.cherkovskiy.vfs.DirectoryFactory;
@@ -35,33 +36,9 @@ class BundleArchiver implements Closeable {
     private final JarDirectoryAdapter jarFile;
     private final Manifest manifest;
     private final Set<ServiceDescriptor> serviceDescriptions = Sets.newHashSet();
-    private final Map<DependencyGroup, Set<DependencyDescriptor>> depGroupToManifestStr = Arrays.stream(DependencyGroup.values())
+    private final Map<DependencyGroup, Set<ManifestArtifact>> depGroupToManifestStr = Arrays.stream(DependencyGroup.values())
             .collect(Collectors.toMap(Function.identity(), dg -> Sets.newHashSet()));
 
-
-    private enum DependencyGroup {
-        API_EXPORT("WDA-Bundle-Api-Export-Dependencies", "embedded/api/"),
-        API_IMPORT("WDA-Bundle-Api-Import-Dependencies", "embedded/api/"),
-        COMMON("WDA-Bundle-Common-Dependencies", "embedded/libs/common/"),
-        IMPL_INTERNAL("WDA-Bundle-Impl-Internal-Dependencies", "embedded/libs/wda/"),
-        IMPL_EXTERNAL("WDA-Bundle-Impl-External-Dependencies", "embedded/libs/"),;
-
-        private final String attributeName;
-        private final String path;
-
-        DependencyGroup(String attributeName, String path) {
-            this.attributeName = attributeName;
-            this.path = path;
-        }
-
-        public String getAttributeName() {
-            return attributeName;
-        }
-
-        public String getPath() {
-            return path;
-        }
-    }
 
     public BundleArchiver(File archivePath, boolean isEmbedded) {
         this.jarFile = new JarDirectoryAdapter(DirectoryFactory.defaultInstance().tryDetectAndOpen(archivePath.getAbsolutePath(), false));
@@ -139,14 +116,14 @@ class BundleArchiver implements Closeable {
         final Attributes attributes = manifest.getMainAttributes();
 
         final String services = serviceDescriptions.stream()
-                .map(ServiceDescriptor::toManifestCompatibleString)
+                .map(ServiceDescriptor::toManifestString)
                 .collect(joining(ServiceDescriptor.GROUP_SEPARATOR));
         attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
 
-        for (Map.Entry<DependencyGroup, Set<DependencyDescriptor>> entry : depGroupToManifestStr.entrySet()) {
+        for (Map.Entry<DependencyGroup, Set<ManifestArtifact>> entry : depGroupToManifestStr.entrySet()) {
             final String manifestStr = entry.getValue().stream()
-                    .map(DependencyDescriptor::toManifestCompatibleString)
-                    .collect(Collectors.joining(DependencyDescriptor.GROUP_SEPARATOR));
+                    .map(ManifestArtifact::toManifestString)
+                    .collect(Collectors.joining(ManifestArtifact.GROUP_SEPARATOR));
             attributes.put(new Attributes.Name(entry.getKey().getAttributeName()), manifestStr);
         }
 

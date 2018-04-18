@@ -22,7 +22,7 @@ public class ServiceDescriptionTest {
 
     @Test
     public void toFromManifestTest() throws IOException {
-        final String str = serviceDescription.toManifestCompatibleString();
+        final String str = serviceDescription.toManifestString();
         final ServiceDescriptor serviceDescription2 = ServiceDescriptor.fromManifestString(str);
 //
 //        Files.write(Paths.get("lllllll.test"), str.getBytes(StandardCharsets.UTF_8));

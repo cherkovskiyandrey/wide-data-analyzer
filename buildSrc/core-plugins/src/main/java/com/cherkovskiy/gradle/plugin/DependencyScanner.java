@@ -73,7 +73,7 @@ public class DependencyScanner {
                 .collect(Collectors.toList());
     }
 
-    private void walkDependency(ResolvedDependency resolvedDependency, List<DependencyHolder> dependencies, ConfigurationTypes dependencyType, DependencyHolder parent) {
+    private static void walkDependency(ResolvedDependency resolvedDependency, List<DependencyHolder> dependencies, ConfigurationTypes dependencyType, DependencyHolder parent) {
         final DependencyHolder holder = DependencyHolder.builder()
                 .setGroup(resolvedDependency.getModule().getId().getGroup())
                 .setName(resolvedDependency.getModule().getId().getName())
@@ -87,10 +87,22 @@ public class DependencyScanner {
         resolvedDependency.getChildren().forEach(childDependency -> walkDependency(childDependency, dependencies, dependencyType, holder));
     }
 
-    private List<File> extractArtifacts(Set<ResolvedArtifact> moduleArtifacts) {
+    private static List<File> extractArtifacts(Set<ResolvedArtifact> moduleArtifacts) {
         return moduleArtifacts.stream()
                 .map(ResolvedArtifact::getFile)
                 .collect(Collectors.toList());
     }
 
+    public static List<DependencyHolder> resolveOn(Project project, Dependency... dependency) {
+        final List<DependencyHolder> dependencies = Lists.newArrayList();
+        for (ResolvedDependency resolvedDependency : project.getConfigurations()
+                .detachedConfiguration(dependency)
+                .getResolvedConfiguration()
+                .getFirstLevelModuleDependencies()) {
+
+            walkDependency(resolvedDependency, dependencies, ConfigurationTypes.UNKNOWN, null);
+        }
+
+        return dependencies;
+    }
 }

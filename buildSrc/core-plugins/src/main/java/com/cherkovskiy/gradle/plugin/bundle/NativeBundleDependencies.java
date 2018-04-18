@@ -9,11 +9,11 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
-class NativeBundleDependencies implements BundleDependencies {
+public class NativeBundleDependencies implements BundleDependencies {
     private final List<DependencyHolder> runtimeConfDependencies;
     private final List<DependencyHolder> apiConfDependencies;
 
-    NativeBundleDependencies(List<DependencyHolder> runtimeConfDependencies, List<DependencyHolder> apiConfDependencies) {
+    public NativeBundleDependencies(List<DependencyHolder> runtimeConfDependencies, List<DependencyHolder> apiConfDependencies) {
         this.runtimeConfDependencies = runtimeConfDependencies;
         this.apiConfDependencies = apiConfDependencies;
     }
