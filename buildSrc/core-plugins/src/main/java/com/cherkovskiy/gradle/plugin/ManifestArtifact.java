@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class ManifestArtifact {
+public class ManifestArtifact implements Artifact {
     public static final String GROUP_SEPARATOR = ";";
     private final static Pattern MAVEN_PATTERN = Pattern.compile("^([^:]+):([^:]+):([^:]+):([^:]*)");
 
@@ -24,34 +24,37 @@ public class ManifestArtifact {
         this.fileName = fileName;
     }
 
+    @Override
     @Nonnull
     public String getGroup() {
         return group;
     }
 
+    @Override
     @Nonnull
     public String getName() {
         return name;
     }
 
+    @Override
     @Nonnull
     public String getVersion() {
         return version;
     }
-
+    
     @Nonnull
     public String getFileName() {
         return fileName;
     }
 
     @Nonnull
-    public String toManifestString() {
+    public static String toManifestString(Artifact artifact) {
         final StringBuilder stringBuilder = new StringBuilder(1024);
 
-        stringBuilder.append(group).append(":");
-        stringBuilder.append(name).append(":");
-        stringBuilder.append(version).append(":");
-        stringBuilder.append(fileName);
+        stringBuilder.append(artifact.getGroup()).append(":");
+        stringBuilder.append(artifact.getName()).append(":");
+        stringBuilder.append(artifact.getVersion()).append(":");
+        stringBuilder.append(artifact.getVersion());
 
         return stringBuilder.toString();
     }
@@ -71,7 +74,7 @@ public class ManifestArtifact {
         return Objects.hash(group, name, version);
     }
 
-    public static Set<ManifestArtifact> fromManifestString(String manifestString) {
+    public static Set<? extends Artifact> fromManifestString(String manifestString) {
         return Arrays.stream(manifestString.split(GROUP_SEPARATOR))
                 .map(str -> {
                     Matcher matcher = MAVEN_PATTERN.matcher(str);

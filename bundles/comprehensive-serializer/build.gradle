@@ -1,6 +1,8 @@
 group 'com.cherkovskiy.bundle'
 version '1.0-SNAPSHOT'
 
+apply plugin: 'maven'
+
 dependencies {
 
     //To expose

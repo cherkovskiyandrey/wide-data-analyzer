@@ -93,7 +93,7 @@ public class DependencyScanner {
                 .collect(Collectors.toList());
     }
 
-    public static List<DependencyHolder> resolveOn(Project project, Dependency... dependency) {
+    public static List<DependencyHolder> resolveDetachedOn(Project project, Dependency... dependency) {
         final List<DependencyHolder> dependencies = Lists.newArrayList();
         for (ResolvedDependency resolvedDependency : project.getConfigurations()
                 .detachedConfiguration(dependency)

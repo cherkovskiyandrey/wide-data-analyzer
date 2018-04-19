@@ -1,11 +1,14 @@
 package com.cherkovskiy.gradle.plugin;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -13,7 +16,7 @@ import java.util.Optional;
 import static java.lang.String.format;
 
 //Don't override equals and hashcode - DependencyScanner assume these methods are default
-public class DependencyHolder {
+public class DependencyHolder implements ResolvedArtifact {
 
     private final String group;
     private final String name;
@@ -51,6 +54,23 @@ public class DependencyHolder {
     @Nonnull
     public String getVersion() {
         return version;
+    }
+
+    @Override
+    public String getArtifactFileName() {
+        return getArchive().getName();
+    }
+
+    @Override
+    public InputStream openInputStream() throws IOException {
+        return FileUtils.openInputStream(getArchive());
+    }
+
+    public File getArchive() {
+        return getArtifacts().stream()
+                .filter(DependencyHolder::isArchive)
+                .findFirst()
+                .orElseThrow(() -> new GradleException(format("Dependency artifact %s could not be resolved as archive!", this)));
     }
 
     @Nonnull
@@ -108,18 +128,10 @@ public class DependencyHolder {
         return result.toString();
     }
 
-    public boolean isSame(DependencyHolder dep) {
+    public boolean isSame(Artifact dep) {
         return Objects.equals(dep.getGroup(), getGroup()) &&
                 Objects.equals(dep.getName(), getName()) &&
                 Objects.equals(dep.getVersion(), getVersion());
-    }
-
-    public ManifestArtifact descriptor() {
-        return new ManifestArtifact(getGroup(), getName(), getVersion(), getArtifacts().stream()
-                .filter(DependencyHolder::isArchive)
-                .map(File::getName)
-                .findFirst()
-                .orElseThrow(() -> new GradleException(format("Dependency artifact %s could not be resolved as archive!", this))));
     }
 
     public static boolean isArchive(File file) {

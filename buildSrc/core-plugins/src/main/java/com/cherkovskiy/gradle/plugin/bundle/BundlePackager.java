@@ -81,19 +81,25 @@ public class BundlePackager implements Plugin<Project> {
             checkDependenciesAgainst(project, runtimeConfDependencies, allApiDependencies);
 
             final List<DependencyHolder> apiConfDependencies = dependencyScanner.getDependenciesByType(API);
-            final BundleDependencies dependencyCollection = new NativeBundleDependencies(runtimeConfDependencies, apiConfDependencies);
+            final ProjectBundle bundleArtifact = new ProjectBundle(jarTask.getArchivePath(),
+                    project.getGroup().toString(),
+                    jarTask.getBaseName(),
+                    jarTask.getVersion(),
+                    configuration.embeddedDependencies,
+                    runtimeConfDependencies,
+                    apiConfDependencies);
 
             //Bundle can export only services from api dependencies without services from transitive these api dependencies
-            final List<ServiceDescriptor> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), dependencyCollection);
+            final List<ServiceDescriptor> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), bundleArtifact);
 
-            try (BundleArchiver bundleArchive = new BundleArchiver(jarTask.getArchivePath(), configuration.embeddedDependencies)) {
-                bundleArchive.setBundleNameVersion(jarTask.getBaseName(), jarTask.getVersion());
+            try (BundleArchiver bundleArchive = new BundleArchiver(bundleArtifact.getArchive(), bundleArtifact.isEmbedded())) {
+                bundleArchive.setBundleNameVersion(bundleArtifact.getName(), bundleArtifact.getVersion());
 
-                bundleArchive.putApiExportDependencies(dependencyCollection.getApiExport());
-                bundleArchive.putApiImportDependencies(dependencyCollection.getApiImport());
-                bundleArchive.putCommonDependencies(dependencyCollection.getCommon());
-                bundleArchive.putExternalImplDependencies(dependencyCollection.getExternalImpl());
-                bundleArchive.putInternalImplDependencies(dependencyCollection.getInternalImpl());
+                bundleArchive.putApiExportDependencies(bundleArtifact.getApiExport());
+                bundleArchive.putApiImportDependencies(bundleArtifact.getApiImport());
+                bundleArchive.putCommonDependencies(bundleArtifact.getCommon());
+                bundleArchive.putExternalImplDependencies(bundleArtifact.getImplExternal());
+                bundleArchive.putInternalImplDependencies(bundleArtifact.getImplInternal());
 
                 bundleArchive.addServices(serviceDescriptions);
             } catch (Exception e) {
@@ -113,10 +119,10 @@ public class BundlePackager implements Plugin<Project> {
                         .collect(Collectors.toSet())));
     }
 
-    private List<ServiceDescriptor> extractAllServicesFrom(File rootArtifactFile, BundleDependencies dependencies) {
+    private List<ServiceDescriptor> extractAllServicesFrom(File rootArtifactFile, ProjectBundle projectBundle) {
         // We use parent class loader because this plugin uses outside api sources.
         // URLClassLoader has to load Service class from current loader.
-        final ServicesClassLoader classLoader = new ServicesClassLoader(rootArtifactFile, dependencies.getAll(), Thread.currentThread().getContextClassLoader());
+        final ServicesClassLoader classLoader = new ServicesClassLoader(rootArtifactFile, projectBundle.getAll(), Thread.currentThread().getContextClassLoader());
 
         try {
             final List<String> allClasses = getAllClassesName(rootArtifactFile);
@@ -125,7 +131,7 @@ public class BundlePackager implements Plugin<Project> {
                             .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
                             .filter(cls -> cls.isAnnotationPresent(Service.class))
                             .peek(this::checkClassRestrictions)
-                            .map(cls -> toServiceDescription(cls, dependencies, classLoader))
+                            .map(cls -> toServiceDescription(cls, projectBundle, classLoader))
                             .collect(toList())
                     , ClassNotFoundException.class);
 
@@ -155,7 +161,7 @@ public class BundlePackager implements Plugin<Project> {
         }
     }
 
-    private ServiceDescriptor toServiceDescription(Class<?> cls, BundleDependencies dependencies, ServicesClassLoader classLoader) {
+    private ServiceDescriptor toServiceDescription(Class<?> cls, ProjectBundle projectBundle, ServicesClassLoader classLoader) {
         final List<Class<?>> implInterfaces = Lists.newArrayList();
         walkClass(cls, implInterfaces);
 
@@ -174,7 +180,7 @@ public class BundlePackager implements Plugin<Project> {
 
         implInterfaces.forEach(i -> {
             final boolean isApiDependency = classLoader.getDependencyHolder(i)
-                    .map(dependencies::isApiExport)
+                    .map(projectBundle::isApiExport)
                     .orElse(false);
 
             builder.addInterface(i.getName(), isApiDependency ? ServiceDescriptor.AccessType.PUBLIC : ServiceDescriptor.AccessType.PRIVATE);

@@ -1,13 +1,9 @@
 package com.cherkovskiy.gradle.plugin.bundle;
 
-import com.cherkovskiy.gradle.plugin.DependencyGroup;
-import com.cherkovskiy.gradle.plugin.ManifestArtifact;
-import com.cherkovskiy.gradle.plugin.DependencyHolder;
-import com.cherkovskiy.gradle.plugin.ServiceDescriptor;
+import com.cherkovskiy.gradle.plugin.*;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
 import com.google.common.collect.Sets;
-import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 
 import java.io.Closeable;
@@ -23,20 +19,16 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
+import static com.cherkovskiy.gradle.plugin.BundleFile.*;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 
 class BundleArchiver implements Closeable {
-    private static final String BUNDLE_NAME = "WDA-Bundle-Name";
-    private static final String BUNDLE_VERSION = "WDA-Bundle-Version";
-    private static final String EXPORTED_SERVICES = "WDA-Bundle-Exported-Services";
-    private static final String IS_DEPENDENCIES_EMBEDDED = "WDA-Bundle-Dependencies-Embedded";
-
     private final boolean isEmbedded;
     private final JarDirectoryAdapter jarFile;
     private final Manifest manifest;
     private final Set<ServiceDescriptor> serviceDescriptions = Sets.newHashSet();
-    private final Map<DependencyGroup, Set<ManifestArtifact>> depGroupToManifestStr = Arrays.stream(DependencyGroup.values())
+    private final Map<DependencyGroup, Set<Artifact>> depGroupToManifestStr = Arrays.stream(DependencyGroup.values())
             .collect(Collectors.toMap(Function.identity(), dg -> Sets.newHashSet()));
 
 
@@ -62,46 +54,35 @@ class BundleArchiver implements Closeable {
         attributes.put(new Attributes.Name(BUNDLE_VERSION), bundleVersion);
     }
 
-    public void putApiExportDependencies(List<DependencyHolder> dependencies) throws IOException {
+    public void putApiExportDependencies(Set<ResolvedArtifact> dependencies) throws IOException {
         putDependencies(dependencies, DependencyGroup.API_EXPORT);
     }
 
 
-    public void putApiImportDependencies(List<DependencyHolder> dependencies) throws IOException {
+    public void putApiImportDependencies(Set<ResolvedArtifact> dependencies) throws IOException {
         putDependencies(dependencies, DependencyGroup.API_IMPORT);
     }
 
-    public void putCommonDependencies(List<DependencyHolder> dependencies) throws IOException {
+    public void putCommonDependencies(Set<ResolvedArtifact> dependencies) throws IOException {
         putDependencies(dependencies, DependencyGroup.COMMON);
     }
 
-    public void putExternalImplDependencies(List<DependencyHolder> dependencies) throws IOException {
+    public void putExternalImplDependencies(Set<ResolvedArtifact> dependencies) throws IOException {
         putDependencies(dependencies, DependencyGroup.IMPL_EXTERNAL);
     }
 
 
-    public void putInternalImplDependencies(List<DependencyHolder> dependencies) throws IOException {
+    public void putInternalImplDependencies(Set<ResolvedArtifact> dependencies) throws IOException {
         putDependencies(dependencies, DependencyGroup.IMPL_INTERNAL);
     }
 
-    private void putDependencies(List<DependencyHolder> dependencies, DependencyGroup dependencyGroup) throws IOException {
-        final Set<File> depArchives = dependencies.stream()
-                .map(d -> d.getArtifacts().stream()
-                        .filter(DependencyHolder::isArchive)
-                        .findFirst()
-                        .orElseThrow(() -> new GradleException(format("Dependency artifact %s could not be resolved as archive!", d))))
-                .distinct()
-                .collect(Collectors.toSet());
-
-        depGroupToManifestStr.get(dependencyGroup).addAll(dependencies.stream()
-                .map(DependencyHolder::descriptor)
-                .collect(Collectors.toSet())
-        );
+    private void putDependencies(Set<ResolvedArtifact> dependencies, DependencyGroup dependencyGroup) throws IOException {
+        depGroupToManifestStr.get(dependencyGroup).addAll(dependencies);
 
         if (isEmbedded) {
-            for (File dep : depArchives) {
-                try (InputStream inputStream = FileUtils.openInputStream(dep)) {
-                    jarFile.createIfNotExists(dependencyGroup.getPath() + dep.getName(), inputStream, null);
+            for (ResolvedArtifact resolvedArtifact : dependencies) {
+                try (InputStream inputStream = resolvedArtifact.openInputStream()) {
+                    jarFile.createIfNotExists(dependencyGroup.getPath() + resolvedArtifact.getArtifactFileName(), inputStream, null);
                 }
             }
         }
@@ -120,10 +101,11 @@ class BundleArchiver implements Closeable {
                 .collect(joining(ServiceDescriptor.GROUP_SEPARATOR));
         attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
 
-        for (Map.Entry<DependencyGroup, Set<ManifestArtifact>> entry : depGroupToManifestStr.entrySet()) {
+        for (Map.Entry<DependencyGroup, Set<Artifact>> entry : depGroupToManifestStr.entrySet()) {
             final String manifestStr = entry.getValue().stream()
                     .map(ManifestArtifact::toManifestString)
                     .collect(Collectors.joining(ManifestArtifact.GROUP_SEPARATOR));
+
             attributes.put(new Attributes.Name(entry.getKey().getAttributeName()), manifestStr);
         }
 

@@ -2,9 +2,14 @@ group 'com.cherkovskiy.application'
 version '1.0-SNAPSHOT'
 
 
-//-- code of application it is like ordered bundle
+//test only external bundles
+repositories {
+    mavenLocal()
+}
+
 dependencies {
 
+    //-- code of application it is like ordered bundle
     //-----------------------------------------------------------
     //-- api to expose ----
     //api project(':api:api-neural-network')
@@ -20,14 +25,23 @@ dependencies {
     implementation dependencyManagement['com.google.guava:guava']
     //-----------------------------------------------------------
 
+    //-- mandatory bundles on board
+    //-----------------------------------------------------------
     //-- Starter is mandatory
     onboard project(':core:application-starter')
 
     //-- Implemented bundles api
     onboard project(':bundles:neural-network-core')
-    onboard project(':bundles:comprehensive-serializer')
 
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    //test loading bundle from maven - failed
+    //onboard project(':bundles:comprehensive-serializer')
+    onboard 'com.cherkovskiy.bundle:comprehensive-serializer:1.0-SNAPSHOT'
+
+    //test loading 3rd party from maven
+    onboard group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: '2.0.1.RELEASE'
+    //-----------------------------------------------------------
+
+    //testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
 
