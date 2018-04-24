@@ -3,18 +3,24 @@ package com.cherkovskiy.gradle.plugin.application;
 import com.cherkovskiy.gradle.plugin.*;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePackagerConfiguration;
 import com.cherkovskiy.gradle.plugin.bundle.ProjectBundle;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ProjectDependency;
+import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.jvm.tasks.Jar;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,36 +31,70 @@ class OnboardResolver implements Closeable {
     public static final String ONBOARD_CONF_NAME = "onboard";
 
     private final Project project;
-    private final List<BundleFile> openedBundles = Lists.newArrayList();
+    private final ApplicationPackagerConfiguration configuration;
+    private final File baseTmpDir;
+    private final ResolvedDependency applicationStarter;
+    private final ResolvedBundleArtifact currentBundle;
+    private final Set<ResolvedBundleArtifact> bundles;
 
-    public OnboardResolver(Project project) {
+    OnboardResolver(Project project, ApplicationPackagerConfiguration configuration) throws IOException {
         this.project = project;
+        this.configuration = configuration;
+        this.baseTmpDir = Files.createTempDir();
+        FileUtils.forceDeleteOnExit(this.baseTmpDir);
+
+        this.bundles = Sets.newTreeSet(ResolvedBundleArtifact.COMPARATOR);
+        ResolvedDependency applicationStarter = null;
+        for (Dependency dependency : project.getConfigurations().getByName(ONBOARD_CONF_NAME).getDependencies()) {
+            if (dependency instanceof ProjectDependency) {
+                final Project depProject = ((ProjectDependency) dependency).getDependencyProject();
+                if (isBundle(dependency)) {
+                    this.bundles.add(getBundleFromProject(depProject));
+                } else if (isApplicationStarter(dependency)) {
+
+                    //TODO: вытащить в том числе и зависимости по классам: api, core, common + 3rd party и их разложить в ApplicationPackager
+                    //applicationStarter =
+
+                } else {
+                    throw new GradleException(format("Unsupported using in \"%s\" not a bundle or application-starter dependencies: %s",
+                            ONBOARD_CONF_NAME, dependency.toString()));
+                }
+            } else {
+                if (isBundle(dependency)) {
+                    this.bundles.add(getBundleFromArtifact(dependency));
+                } else if (isApplicationStarter(dependency)) {
+
+                    //TODO: вытащить в том числе и зависимости по классам: api, core, common + 3rd party и их разложить в ApplicationPackager
+                    //applicationStarter = DependencyScanner.resolveDetachedOn(project, dependency).get(0);
+
+                } else {
+                    throw new GradleException(format("Unsupported using in \"%s\" not a bundle or application-starter dependencies: %s",
+                            ONBOARD_CONF_NAME, dependency.toString()));
+                }
+            }
+        }
     }
 
     /**
      * @return all bundles form which application get on board + embedded in application bundle
      */
-    public Set<ResolvedBundleArtifact> getBundles() throws IOException {
-        final Set<ResolvedBundleArtifact> result = Sets.newHashSet();
+    public Set<ResolvedBundleArtifact> getBundles() {
+        return bundles;
+    }
 
-        for (Dependency dependency : project.getConfigurations().getByName(ONBOARD_CONF_NAME).getDependencies()) {
-            if (dependency instanceof ProjectDependency) {
-                final Project depProject = ((ProjectDependency) dependency).getDependencyProject();
+    private ResolvedBundleArtifact getBundleFromProject(Project depProject) {
+        final DependencyScanner dependencyScanner = new DependencyScanner(depProject);
+        final List<DependencyHolder> runtimeConfDependencies = dependencyScanner.getRuntimeDependencies();
+        final List<DependencyHolder> apiConfDependencies = dependencyScanner.getDependenciesByType(API);
+        final Jar jarTask = depProject.getTasks().withType(Jar.class).iterator().next();
+        final BundlePackagerConfiguration configuration = project.getExtensions().getByType(BundlePackagerConfiguration.class);
 
-                if (isBundle(depProject)) {
-                    result.add(getBundleFromProject(depProject));
-                }
-                //todo: other project elements
-            } else {
-                if (isBundle(dependency)) {
-                    result.add(getBundleFromArtifact(dependency));
-                }
-                throw new GradleException(format("Unsupported using in \"%s\" not a bundle dependencies: %s",
-                        ONBOARD_CONF_NAME, dependency.toString()));
-            }
-        }
-
-        return result;
+        return new ProjectBundle(jarTask.getArchivePath(),
+                jarTask.getBaseName(),
+                jarTask.getVersion(),
+                configuration.embeddedDependencies,
+                runtimeConfDependencies,
+                apiConfDependencies);
     }
 
     private ResolvedBundleArtifact getBundleFromArtifact(Dependency bundle) throws IOException {
@@ -66,69 +106,52 @@ class OnboardResolver implements Closeable {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(""));
 
-        BundleFile bundleFile = null;
-        boolean isEmbedded = false;
-        try {
-            bundleFile = new BundleFile(root.getArchive());
-            isEmbedded = bundleFile.isEmbedded();
-            if (isEmbedded) {
-                openedBundles.add(bundleFile);
-                return bundleFile.asSelfResolved();
+        final BundleFile bundleFile = new BundleFile(root.getFile());
+        if (bundleFile.isEmbedded()) {
+            final File bundleUnpackDir = new File(baseTmpDir, bundleFile.getName());
+            FileUtils.forceMkdir(bundleUnpackDir);
+            return bundleFile.resolveTo(bundleUnpackDir);
 
-            } else {
-                final BundleFile bundleFileRef = bundleFile;
-                final List<DependencyHolder> apiExport = dependencies.stream()
-                        .filter(dh ->
-                                bundleFileRef.getApiExport().stream()
-                                        .anyMatch(ma -> Objects.equals(dh.getGroup(), ma.getGroup()) &&
-                                                Objects.equals(dh.getName(), ma.getName()) &&
-                                                Objects.equals(dh.getVersion(), ma.getVersion()))
-                        )
-                        .collect(Collectors.toList());
+        } else {
+            final List<DependencyHolder> apiExport = dependencies.stream()
+                    .filter(dh -> bundleFile.getApiExport().contains(dh))
+                    .collect(Collectors.toList());
 
-                return new ProjectBundle(root.getArchive(),
-                        root.getGroup(),
-                        root.getName(),
-                        root.getVersion(),
-                        false,
-                        dependencies.stream().filter(d -> !d.equals(root)).collect(Collectors.toList()),
-                        apiExport);
-            }
-        } finally {
-            if (bundleFile != null && !isEmbedded) {
-                bundleFile.close();
-            }
+            return new ProjectBundle(root.getFile(),
+                    root.getName(),
+                    root.getVersion(),
+                    false,
+                    dependencies.stream().filter(d -> !d.equals(root)).collect(Collectors.toList()),
+                    apiExport);
         }
     }
 
-    private ResolvedBundleArtifact getBundleFromProject(Project depProject) {
-        final DependencyScanner dependencyScanner = new DependencyScanner(depProject);
-        final List<DependencyHolder> runtimeConfDependencies = dependencyScanner.getRuntimeDependencies();
-        final List<DependencyHolder> apiConfDependencies = dependencyScanner.getDependenciesByType(API);
-        final Jar jarTask = depProject.getTasks().withType(Jar.class).iterator().next();
-        final BundlePackagerConfiguration configuration = project.getExtensions().getByType(BundlePackagerConfiguration.class);
-
-        return new ProjectBundle(jarTask.getArchivePath(),
-                project.getGroup().toString(),
-                jarTask.getBaseName(),
-                jarTask.getVersion(),
-                configuration.embeddedDependencies,
-                runtimeConfDependencies,
-                apiConfDependencies);
-    }
 
     private boolean isBundle(Dependency dependency) {
         return SubProjectTypes.BUNDLE.getSubGroupName().equalsIgnoreCase(dependency.getGroup());
     }
 
-    private boolean isBundle(Project depProject) {
-        return SubProjectTypes.BUNDLE.getSubGroupName().equalsIgnoreCase(depProject.getGroup().toString());
+    private boolean isApplicationStarter(Dependency dependency) {
+        return configuration.starterName.equalsIgnoreCase(dependency.getName());
     }
 
     @Override
     public void close() throws IOException {
-        for (BundleFile bundleFile : openedBundles) {
-            bundleFile.close();
-        }
+        FileUtils.deleteDirectory(baseTmpDir);
+    }
+
+    public static void createConfiguration(Project project) {
+        final Configuration onboard = project.getConfigurations().create(ONBOARD_CONF_NAME);
+        final Task buildTask = project.getTasks().getAt(JavaBasePlugin.BUILD_TASK_NAME);
+        buildTask.dependsOn(onboard.getTaskDependencyFromProjectDependency(true, JavaBasePlugin.BUILD_NEEDED_TASK_NAME));
+    }
+
+    public Optional<ResolvedBundleArtifact> getCurrentBundle() {
+        //todo: может и не быть
+        return getBundleFromProject(project);
+    }
+
+    public ResolvedDependency getApplicationStarter() {
+        return applicationStarter;
     }
 }

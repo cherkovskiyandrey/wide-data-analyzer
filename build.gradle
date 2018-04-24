@@ -25,7 +25,7 @@ configure(subprojects.findAll { it.group == (rootProject.name + '.api') }) {
 }
 
 configure(subprojects.findAll { it.group == (rootProject.name + '.bundles') }) {
-    apply plugin: 'bundle-packager' // the plugin is mandatory for each bundle
+    apply plugin: 'bundle-plugin' // the plugin is mandatory for each bundle
     //Use to debug
     //logger.log(LogLevel.ERROR, "bundle-packager applied to: ${it.group}:${it.name}:${it.version}")
 }
@@ -33,7 +33,7 @@ configure(subprojects.findAll { it.group == (rootProject.name + '.bundles') }) {
 configure(subprojects.findAll {
     (it.group as String).matches(rootProject.name.replace('.', "\\.") + "\\.applications.*")
 }) {
-    apply plugin: 'application-packager' // the plugin is mandatory for each bundle
+    apply plugin: 'application-plugin' // the plugin is mandatory for each bundle
     //Use to debug
     //logger.log(LogLevel.ERROR, "application-packager applied to: ${it.group}:${it.name}:${it.version}")
 }

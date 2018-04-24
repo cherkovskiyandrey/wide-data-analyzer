@@ -58,8 +58,7 @@ public class CommonValidator implements Plugin<Project> {
                     }
 
                     final Optional<String> projectTypeStr = Utils.subProjectAgainst(projectGroup, rootGroupName);
-                    SubProjectTypes projectType;
-                    if (!projectTypeStr.isPresent() || Objects.isNull(projectType = SubProjectTypes.ofSubGroupName(projectTypeStr.get()))) {
+                    if (!projectTypeStr.isPresent() || Objects.isNull(SubProjectTypes.ofSubGroupName(projectTypeStr.get()))) {
                         throw new GradleException(format("Unsupported subproject group name %s for %s. Use only %s!",
                                 projectGroup, project.getPath(), SubProjectTypes.SUB_GROUP_NAME_TO_TYPE.keySet().stream().collect(Collectors.joining(", "))));
                     }
@@ -87,10 +86,10 @@ public class CommonValidator implements Plugin<Project> {
                         .findFirst();
 
                 if (!mngDep.isPresent()) {
-                    project.getLogger().log(LogLevel.ERROR, "Artifact: {} does'n exists in dependencyManagement section of root build.gradle", prjDep);
+                    project.getLogger().log(LogLevel.ERROR, "Dependency: {} does'n exists in dependencyManagement section of root build.gradle", prjDep);
 
                 } else if (!Objects.equals(mngDep.get().getVersion(), prjDep.getVersion())) {
-                    project.getLogger().log(LogLevel.ERROR, "Artifact: {} has other version than {} in dependencyManagement section of root build.gradle. ",
+                    project.getLogger().log(LogLevel.ERROR, "Dependency: {} has other version than {} in dependencyManagement section of root build.gradle. ",
                             prjDep, mngDep.get().getVersion());
                 }
             }

@@ -1,6 +1,6 @@
 package com.cherkovskiy.gradle.plugin;
 
-public enum DependencyGroup {
+public enum BundleDependencyGroup {
     API_EXPORT("WDA-Bundle-Api-Export-Dependencies", "embedded/api/"),
     API_IMPORT("WDA-Bundle-Api-Import-Dependencies", "embedded/api/"),
     COMMON("WDA-Bundle-Common-Dependencies", "embedded/libs/common/"),
@@ -10,7 +10,7 @@ public enum DependencyGroup {
     private final String attributeName;
     private final String path;
 
-    DependencyGroup(String attributeName, String path) {
+    BundleDependencyGroup(String attributeName, String path) {
         this.attributeName = attributeName;
         this.path = path;
     }

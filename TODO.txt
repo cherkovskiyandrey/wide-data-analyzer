@@ -33,32 +33,26 @@
 - для бандла убрать из impl зависимостей common! (+)
 - разделить api зависимости в манифесте на api-export и api-import (+)
 - сопровождать в манифесте зависимость группой-именем-версией (+)
-
-- отвязаться от хардкода проектных путей в плагинах градла - для возможности создавать потом бандлы и плагины из вне (-)
+- отвязаться от хардкода проектных путей в плагинах градла - для возможности создавать потом бандлы и плагины из вне (+)
 
 - application-packager: сбор всех бандлов, апи, сторонних либ, общих библиотек и их размещенние по каталогам (-)
 	* перетащить и адаптировать vfs проект (+)
 	* подключиться к vfs проекту (+)
 	* вытащить все onboard бандл зависимости и положить их в core_bundles, а если бандл без embedded зависимостей,
 		то вытащить транзитивные зависимости и положить соответственно по api, lib\common, lib\wda, lib  (-)
-
 	* проблема с onboard - не все зависимости на момент build собрались!!!!!! (+)
 		-> так же проверить как отрабатывает STUFF_ALL_API!!!!! (+) - тоже нет, но и не важно - там просто сопоставляем зависимости!
---------------------------------------- как сделать ------------------------------------------------
-по сути повторяем работу bundle-packager ИНДИВИДУАЛЬНО для каждого бандла!
-((DefaultProjectDependency) project.getConfigurations().getByName("onboard").getDependencies().toArray(new Dependency[0])[0]).getDependencyProject().getPath()
-((DefaultProjectDependency) project.getConfigurations().getByName("onboard").getDependencies().toArray(new Dependency[0])[2]).getDependencyProject().getConfigurations()                 .getByName(dependencyType.getGradleString())                 .getResolvedConfiguration()                 .getFirstLevelModuleDependencies()
-Проверить что резолвинг по отдельности каждого onboard не пересикается с резолвингом onboard целиком (+) -> всё ок!!
-----------------------------------------------------------------------------------------------------
 
 
 - application-packager: повторить логику createAndInitStuffApiConfig - только собрать уже все бандлы, в том числе и 3rd party бандлы,
-вытащить из них api и 3rd party api, проверить checkDependenciesAgainst, кинуть ошибку (-)
+вытащить из них api и 3rd party api, проверить checkDependenciesAgainst, кинуть ошибку (+)
     //TODO: gather all api not only from project but from 3rd bundles from maven repo.
     //for example, this bundles could embedded new api with new external common dependencies
     //this method could not get these dependencies and this class could not invoke checkDependenciesAgainst with this considerate.
+- application-packager: ревизия не реализованных API с предупреждением (+)
 
-- application-packager: ревизия не реализованных API с предупреждением (-)
+
+- implementation project(':applications:application-starter') (-)
 
 - переименовать группу com.cherkovskiy на com.wide_data_analyzer (-)
 

@@ -1,48 +1,93 @@
 package com.cherkovskiy.gradle.plugin.application;
 
 import com.cherkovskiy.gradle.plugin.ResolvedBundleArtifact;
-import com.cherkovskiy.gradle.plugin.bundle.BundlePackager;
+import com.cherkovskiy.gradle.plugin.ResolvedDependency;
+import com.cherkovskiy.vfs.Directory;
+import com.cherkovskiy.vfs.DirectoryFactory;
+import com.cherkovskiy.vfs.DirectoryUtils;
+import com.cherkovskiy.vfs.MutableDirectory;
+import com.cherkovskiy.vfs.dir.SimpleDirectoryProvider;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.plugins.JavaBasePlugin;
 
-import javax.annotation.Nonnull;
+import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
+import java.io.InputStream;
 import java.util.Set;
 
-import static com.cherkovskiy.gradle.plugin.application.OnboardResolver.ONBOARD_CONF_NAME;
+import static java.lang.String.format;
 
+class ApplicationPackager implements Closeable {
+    private final MutableDirectory directory;
 
-public class ApplicationPackager implements Plugin<Project> {
-
-    @Override
-    public void apply(@Nonnull Project project) {
-        final Configuration onboard = project.getConfigurations().create(ONBOARD_CONF_NAME);
-        final Task buildTask = project.getTasks().getAt(JavaBasePlugin.BUILD_TASK_NAME);
-        buildTask.dependsOn(onboard.getTaskDependencyFromProjectDependency(true, JavaBasePlugin.BUILD_NEEDED_TASK_NAME));
-
-        project.apply(Collections.singletonMap("plugin", BundlePackager.class));
-
-        final ApplicationPackagerConfiguration configuration = project.getExtensions().create(ApplicationPackagerConfiguration.NAME, ApplicationPackagerConfiguration.class);
-
-        buildTask.doLast(task -> {
-
-            try (final OnboardResolver onboardResolver = new OnboardResolver(project)) {
-                final Set<ResolvedBundleArtifact> bundles = onboardResolver.getBundles();
-
-                //todo: compare all common by versions and against impl in each bundle + compare all api versions
-
-                //todo: put dependencies in right places
-
-            } catch (IOException e) {
-                throw new GradleException(e.getMessage(), e);
-            }
-            System.out.println("configuration.format: " + configuration.format);
-        });
+    ApplicationPackager(String targetArtifact) {
+        this.directory = DirectoryFactory.defaultInstance().tryDetectAndOpen(targetArtifact, true);
+        createDirectories(directory);
     }
 
+    @Override
+    public void close() throws IOException {
+        directory.close();
+    }
+
+    public void copyResources(File resourcesPath, String to) throws IOException {
+        if (!resourcesPath.exists() || !resourcesPath.isDirectory()) {
+            throw new GradleException(format("Could not file bin resources in %s", resourcesPath.getAbsoluteFile()));
+        }
+
+        try (Directory binResources = new SimpleDirectoryProvider().createInstance(resourcesPath.getAbsolutePath())) {
+            DirectoryUtils.copyRecursive(binResources, "", directory, to);
+        }
+    }
+
+    public void putApi(Set<ResolvedDependency> api) throws IOException {
+        putDependencies(ApplicationDirectories.API, api);
+    }
+
+    public void putCommon(Set<ResolvedDependency> common) throws IOException {
+        putDependencies(ApplicationDirectories.LIB_COMMON, common);
+    }
+
+    public void putExternal(Set<ResolvedDependency> external) throws IOException {
+        putDependencies(ApplicationDirectories.LIB, external);
+    }
+
+    public void putInternal(Set<ResolvedDependency> internal) throws IOException {
+        putDependencies(ApplicationDirectories.LIB_INTERNAL, internal);
+    }
+
+    public void putApplicationStarter(ResolvedDependency applicationStarter) throws IOException {
+        try (InputStream inputStream = FileUtils.openInputStream(applicationStarter.getFile())) {
+            directory.createIfNotExists(ApplicationDirectories.BIN + applicationStarter.getFile().getName(), inputStream, null);
+        }
+    }
+
+    public void putAppBundle(ResolvedBundleArtifact artifact) throws IOException {
+        try (InputStream inputStream = FileUtils.openInputStream(artifact.getFile())) {
+            directory.createIfNotExists(ApplicationDirectories.APP + artifact.getFile().getName(), inputStream, null);
+        }
+    }
+
+    public void putBundles(Set<ResolvedBundleArtifact> bundles) throws IOException {
+        for (ResolvedBundleArtifact bundle : bundles) {
+            try (InputStream inputStream = FileUtils.openInputStream(bundle.getFile())) {
+                directory.createIfNotExists(ApplicationDirectories.BUNDLES + bundle.getFile().getName(), inputStream, null);
+            }
+        }
+    }
+
+    private void putDependencies(ApplicationDirectories where, Set<ResolvedDependency> dependencies) throws IOException {
+        for (ResolvedDependency dependency : dependencies) {
+            try (InputStream inputStream = FileUtils.openInputStream(dependency.getFile())) {
+                directory.createIfNotExists(where.getPath() + dependency.getFile().getName(), inputStream, null);
+            }
+        }
+    }
+
+    private void createDirectories(MutableDirectory directory) {
+        for (ApplicationDirectories dir : ApplicationDirectories.values()) {
+            directory.createIfNotExists(dir.getPath(), null, null);
+        }
+    }
 }

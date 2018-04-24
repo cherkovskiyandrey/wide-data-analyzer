@@ -1,24 +1,17 @@
 package com.cherkovskiy.gradle.plugin.bundle;
 
-import com.cherkovskiy.gradle.plugin.DependencyHolder;
-import com.cherkovskiy.gradle.plugin.ResolvedArtifact;
-import com.cherkovskiy.gradle.plugin.ResolvedBundleArtifact;
-import com.cherkovskiy.gradle.plugin.SubProjectTypes;
+import com.cherkovskiy.gradle.plugin.*;
 import com.google.common.collect.Lists;
-import org.apache.commons.io.FileUtils;
+import com.google.common.collect.Sets;
 
+import javax.annotation.Nonnull;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toSet;
-
 public class ProjectBundle implements ResolvedBundleArtifact {
     private final File archivePath;
-    private final String group;
     private final String name;
     private final String version;
     private final boolean embeddedDependencies;
@@ -26,14 +19,12 @@ public class ProjectBundle implements ResolvedBundleArtifact {
     private final List<DependencyHolder> apiConfDependencies;
 
     public ProjectBundle(File archivePath,
-                         String group,
                          String name,
                          String version,
                          boolean embeddedDependencies,
                          List<DependencyHolder> runtimeConfDependencies,
                          List<DependencyHolder> apiConfDependencies) {
         this.archivePath = archivePath;
-        this.group = group;
         this.name = name;
         this.version = version;
         this.embeddedDependencies = embeddedDependencies;
@@ -41,29 +32,16 @@ public class ProjectBundle implements ResolvedBundleArtifact {
         this.apiConfDependencies = apiConfDependencies;
     }
 
-    @Override
-    public String getGroup() {
-        return group;
-    }
-
+    @Nonnull
     @Override
     public String getName() {
         return name;
     }
 
+    @Nonnull
     @Override
     public String getVersion() {
         return version;
-    }
-
-    @Override
-    public String getArtifactFileName() {
-        return archivePath.getName();
-    }
-
-    @Override
-    public InputStream openInputStream() throws IOException {
-        return FileUtils.openInputStream(archivePath);
     }
 
     @Override
@@ -71,42 +49,50 @@ public class ProjectBundle implements ResolvedBundleArtifact {
         return embeddedDependencies;
     }
 
+    @Nonnull
     @Override
-    public Set<ResolvedArtifact> getApiExport() {
+    public File getFile() {
+        return archivePath;
+    }
+
+    @Nonnull
+    @Override
+    public Set<ResolvedDependency> getApiExport() {
         return runtimeConfDependencies.stream()
                 .filter(dep -> dep.isNative() &&
                         SubProjectTypes.API == dep.getSubProjectType() &&
                         existsInApiConfig(dep)
                 )
-                //todo: reduce to set by custom comparator
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
     private boolean existsInApiConfig(DependencyHolder dependencyHolder) {
-        return apiConfDependencies.stream().anyMatch(dependencyHolder::isSame);
+        return apiConfDependencies.contains(dependencyHolder);
     }
 
     public boolean isApiExport(DependencyHolder dependencyHolder) {
-        return getApiExport().stream().anyMatch(dependencyHolder::isSame);
+        return getApiExport().contains(dependencyHolder);
     }
 
+    @Nonnull
     @Override
-    public Set<ResolvedArtifact> getApiImport() {
+    public Set<ResolvedDependency> getApiImport() {
         return runtimeConfDependencies.stream()
                 .filter(dep -> dep.isNative() &&
                         SubProjectTypes.API == dep.getSubProjectType() &&
                         !existsInApiConfig(dep)
                 )
-                //todo: reduce to set by custom comparator
-                .collect(toSet());
+                .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
     public boolean isApiImport(DependencyHolder dependencyHolder) {
-        return getApiImport().stream().anyMatch(dependencyHolder::isSame);
+        return getApiImport().contains(dependencyHolder);
     }
 
+    //TODO: точно ли будет работать, учитывая схлопывания????
+    @Nonnull
     @Override
-    public Set<ResolvedArtifact> getCommon() {
+    public Set<ResolvedDependency> getCommon() {
         return runtimeConfDependencies.stream()
                 .filter(dep -> {
                     if (!dep.isNative()) {
@@ -118,44 +104,52 @@ public class ProjectBundle implements ResolvedBundleArtifact {
                     }
                     return false;
                 })
-                .collect(toSet());
+                .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
     public boolean isCommon(DependencyHolder dependencyHolder) {
-        return getCommon().stream().anyMatch(dependencyHolder::isSame);
+        return getCommon().contains(dependencyHolder);
     }
 
+    @Nonnull
     @Override
-    public Set<ResolvedArtifact> getImplExternal() {
-        final Set<ResolvedArtifact> common = getCommon();
+    public Set<ResolvedDependency> getImplExternal() {
+        final Set<ResolvedDependency> common = getCommon();
         return runtimeConfDependencies.stream()
                 .filter(dep -> !dep.isNative())
-                .filter(dep -> common.stream().noneMatch(dep::isSame))
-                .collect(toSet());
+                .filter(dep -> !common.contains(dep))
+                .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
 
     public boolean isImplExternal(DependencyHolder dependencyHolder) {
-        return getImplExternal().stream().anyMatch(dependencyHolder::isSame);
+        return getImplExternal().contains(dependencyHolder);
     }
 
+    @Nonnull
     @Override
-    public Set<ResolvedArtifact> getImplInternal() {
+    public Set<ResolvedDependency> getImplInternal() {
         return runtimeConfDependencies.stream()
                 .filter(DependencyHolder::isNative)
                 .filter(dep -> SubProjectTypes.API != dep.getSubProjectType())
-                .collect(toSet());
+                .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
     public boolean isInternalImpl(DependencyHolder dependencyHolder) {
-        return getImplInternal().stream().anyMatch(dependencyHolder::isSame);
+        return getImplInternal().contains(dependencyHolder);
     }
 
     public List<DependencyHolder> getAll() {
         return Lists.newArrayList(runtimeConfDependencies);
     }
 
-    public File getArchive() {
-        return archivePath;
+    @Override
+    public String toString() {
+        return "ProjectBundle{" +
+                "archivePath=" + archivePath +
+                ", name='" + name + '\'' +
+                ", version='" + version + '\'' +
+                ", embeddedDependencies=" + embeddedDependencies +
+                '}';
     }
 }

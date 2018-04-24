@@ -1,18 +1,42 @@
 package com.cherkovskiy.gradle.plugin;
 
+import javax.annotation.Nonnull;
+import java.io.File;
+import java.util.Comparator;
 import java.util.Set;
 
-public interface ResolvedBundleArtifact extends ResolvedArtifact {
+public interface ResolvedBundleArtifact {
+
+    @Nonnull
+    String getName();
+
+    @Nonnull
+    String getVersion();
 
     boolean isEmbedded();
 
-    Set<ResolvedArtifact> getApiExport();
+    @Nonnull
+    File getFile();
 
-    Set<ResolvedArtifact> getApiImport();
+    @Nonnull
+    Set<ResolvedDependency> getApiExport();
 
-    Set<ResolvedArtifact> getCommon();
+    @Nonnull
+    Set<ResolvedDependency> getApiImport();
 
-    Set<ResolvedArtifact> getImplExternal();
+    @Nonnull
+    Set<ResolvedDependency> getCommon();
 
-    Set<ResolvedArtifact> getImplInternal();
+    @Nonnull
+    Set<ResolvedDependency> getImplExternal();
+
+    @Nonnull
+    Set<ResolvedDependency> getImplInternal();
+
+    static String toString(ResolvedBundleArtifact artifact) {
+        return String.join(":", artifact.getName(), artifact.getVersion());
+    }
+
+    Comparator<? super ResolvedBundleArtifact> COMPARATOR = Comparator.comparing(ResolvedBundleArtifact::getName)
+            .thenComparing(Comparator.comparing(ResolvedBundleArtifact::getVersion));
 }

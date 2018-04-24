@@ -1,19 +1,27 @@
 package com.cherkovskiy.gradle.plugin;
 
+import java.util.Comparator;
 import java.util.Set;
 
 //todo: move to application-context (?)
-public interface BundleArtifact extends Artifact {
+public interface BundleArtifact {
+
+    String getName();
+
+    String getVersion();
 
     boolean isEmbedded();
 
-    Set<Artifact> getApiExport();
+    Set<Dependency> getApiExport();
 
-    Set<Artifact> getApiImport();
+    Set<Dependency> getApiImport();
 
-    Set<Artifact> getCommon();
+    Set<Dependency> getCommon();
 
-    Set<Artifact> getImplExternal();
+    Set<Dependency> getImplExternal();
 
-    Set<Artifact> getImplInternal();
+    Set<Dependency> getImplInternal();
+
+    Comparator<? super BundleArtifact> COMPARATOR = Comparator.comparing(BundleArtifact::getName)
+            .thenComparing(Comparator.comparing(BundleArtifact::getVersion));
 }
