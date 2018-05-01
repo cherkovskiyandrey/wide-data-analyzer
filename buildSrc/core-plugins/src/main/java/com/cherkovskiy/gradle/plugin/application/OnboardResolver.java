@@ -1,6 +1,8 @@
 package com.cherkovskiy.gradle.plugin.application;
 
 import com.cherkovskiy.gradle.plugin.*;
+import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
+import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePackagerConfiguration;
 import com.cherkovskiy.gradle.plugin.bundle.ProjectBundle;
 import com.google.common.collect.Sets;
@@ -73,6 +75,9 @@ class OnboardResolver implements Closeable {
                 }
             }
         }
+//
+//        final ResolvedBundleArtifact inplaceBundle = getBundleFromProject(project);
+//        this.currentBundle = inplaceBundle.
     }
 
     /**

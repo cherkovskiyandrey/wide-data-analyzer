@@ -1,5 +1,8 @@
 package com.cherkovskiy.gradle.plugin;
 
+import com.cherkovskiy.gradle.plugin.api.Dependency;
+import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
+
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Objects;

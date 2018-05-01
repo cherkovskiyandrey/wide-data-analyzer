@@ -12,7 +12,7 @@ import javax.annotation.PreDestroy;
 
 @Service(
         name = "mlp",
-        type = Service.Type.SINGLETON,
+        lifecycleType = Service.LifecycleType.SINGLETON,
         initType = Service.InitType.EAGER
 )
 public class NeuronNetworkServiceImpl implements NeuronNetworkService {

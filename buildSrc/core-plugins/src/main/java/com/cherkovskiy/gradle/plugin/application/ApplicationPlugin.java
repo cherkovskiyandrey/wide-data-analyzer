@@ -1,8 +1,8 @@
 package com.cherkovskiy.gradle.plugin.application;
 
-import com.cherkovskiy.gradle.plugin.Dependency;
-import com.cherkovskiy.gradle.plugin.ResolvedBundleArtifact;
-import com.cherkovskiy.gradle.plugin.ResolvedDependency;
+import com.cherkovskiy.gradle.plugin.api.Dependency;
+import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
+import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePlugin;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

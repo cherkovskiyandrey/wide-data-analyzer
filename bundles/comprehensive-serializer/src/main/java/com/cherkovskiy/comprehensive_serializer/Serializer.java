@@ -222,14 +222,14 @@ public class Serializer {
                 allRuntimeClasses.add(returnType);
 
                 if (isDebugMode) {
-                    System.out.println("Signature: " + method.getSignature() + " return type: " + returnType);
+                    System.out.println("Signature: " + method.getSignature() + " return lifecycleType: " + returnType);
                 }
 
                 final List<String> argsTypes = Arrays.asList(Utility.methodSignatureArgumentTypes(method.getSignature()));
                 allRuntimeClasses.addAll(argsTypes);
 
                 if (isDebugMode) {
-                    System.out.println("Signature: " + method.getSignature() + " arguments type: " + argsTypes.stream().collect(Collectors.joining("; ")));
+                    System.out.println("Signature: " + method.getSignature() + " arguments lifecycleType: " + argsTypes.stream().collect(Collectors.joining("; ")));
                 }
             }
 
@@ -241,14 +241,14 @@ public class Serializer {
                     System.out.println("Signature: " + method.getGenericSignature() + " generic return types: " + returnTypes.stream().collect(Collectors.joining("; ")));
                 }
 
-                //TODO: try to this method: Type.getArgumentTypes(getSignature(cpg)); there - com/cherkovskiy/Serializer.java:205
+                //TODO: try to this method: LifecycleType.getArgumentTypes(getSignature(cpg)); there - com/cherkovskiy/Serializer.java:205
                 //TODO: не работает для <T:Ljava/time/LocalTime;:Ljava/lang/Runnable;>(TT;)TT; -> public <T extends LocalTime & Runnable> T getLocalTime(T t) throws Exception {
                 final Set<String> argsTypes = Arrays.stream(Utility.methodSignatureArgumentTypes(method.getGenericSignature(), false))
                         .flatMap(s -> extractAllTypes(s).stream())
                         .collect(Collectors.toSet());
 
                 if (isDebugMode) {
-                    System.out.println("Signature: " + method.getGenericSignature() + " generic arguments type: " + argsTypes.stream().collect(Collectors.joining("; ")));
+                    System.out.println("Signature: " + method.getGenericSignature() + " generic arguments lifecycleType: " + argsTypes.stream().collect(Collectors.joining("; ")));
                 }
             }
 

@@ -1,5 +1,9 @@
 package com.cherkovskiy.gradle.plugin;
 
+import com.cherkovskiy.gradle.plugin.api.BundleArtifact;
+import com.cherkovskiy.gradle.plugin.api.Dependency;
+import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
+import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
 import com.cherkovskiy.vfs.DirectoryEntry;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;

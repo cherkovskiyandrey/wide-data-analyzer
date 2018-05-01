@@ -69,7 +69,7 @@ public class MethodScanner extends org.apache.bcel.classfile.EmptyVisitor {
                 break;
             case CONSTANT_MethodHandle:
                 // Note that the ReferenceIndex may point to a Fieldref, Methodref or
-                // InterfaceMethodref - so we need to peek ahead to get the actual type.
+                // InterfaceMethodref - so we need to peek ahead to get the actual lifecycleType.
                 final ConstantMethodHandle cmh = (ConstantMethodHandle) c;
                 classes.addAll(
                         readAllClassesFormConstant(
@@ -88,7 +88,7 @@ public class MethodScanner extends org.apache.bcel.classfile.EmptyVisitor {
                 );
                 break;
             default: // Never reached
-                throw new RuntimeException("Unknown constant type " + tag);
+                throw new RuntimeException("Unknown constant lifecycleType " + tag);
         }
         return classes;
     }

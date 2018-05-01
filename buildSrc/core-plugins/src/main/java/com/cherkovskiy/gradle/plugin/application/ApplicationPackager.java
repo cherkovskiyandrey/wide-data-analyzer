@@ -1,7 +1,7 @@
 package com.cherkovskiy.gradle.plugin.application;
 
-import com.cherkovskiy.gradle.plugin.ResolvedBundleArtifact;
-import com.cherkovskiy.gradle.plugin.ResolvedDependency;
+import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
+import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
 import com.cherkovskiy.vfs.Directory;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.DirectoryUtils;

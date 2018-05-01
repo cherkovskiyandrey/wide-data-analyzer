@@ -1,4 +1,4 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.gradle.plugin.api;
 
 import javax.annotation.Nonnull;
 import java.io.File;

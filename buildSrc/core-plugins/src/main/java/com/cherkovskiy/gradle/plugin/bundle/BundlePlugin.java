@@ -88,9 +88,6 @@ public class BundlePlugin implements Plugin<Project> {
                     runtimeConfDependencies,
                     apiConfDependencies);
 
-            //Bundle can export only services from api dependencies without services from transitive these api dependencies
-            final List<ServiceDescriptor> serviceDescriptions = extractAllServicesFrom(jarTask.getArchivePath(), bundleArtifact);
-
             try (BundlePackager bundleArchive = new BundlePackager(bundleArtifact.getFile(), bundleArtifact.isEmbedded())) {
                 bundleArchive.setBundleNameVersion(bundleArtifact.getName(), bundleArtifact.getVersion());
 
@@ -100,7 +97,7 @@ public class BundlePlugin implements Plugin<Project> {
                 bundleArchive.putExternalImplDependencies(bundleArtifact.getImplExternal());
                 bundleArchive.putInternalImplDependencies(bundleArtifact.getImplInternal());
 
-                bundleArchive.addServices(serviceDescriptions);
+                bundleArchive.addServices(bundleArtifact.getServices());
             } catch (Exception e) {
                 throw new GradleException("Could not change artifact: " + jarTask.getArchivePath().getAbsolutePath(), e);
             }
@@ -116,99 +113,6 @@ public class BundlePlugin implements Plugin<Project> {
                                 .orElse(false))
                         .map(project.getDependencies()::create)
                         .collect(Collectors.toSet())));
-    }
-
-    private List<ServiceDescriptor> extractAllServicesFrom(File rootArtifactFile, ProjectBundle projectBundle) {
-        // We use parent class loader because this plugin uses outside api sources.
-        // URLClassLoader has to load Service class from current loader.
-        final ServicesClassLoader classLoader = new ServicesClassLoader(rootArtifactFile, projectBundle.getAll(), Thread.currentThread().getContextClassLoader());
-
-        try {
-            final List<String> allClasses = getAllClassesName(rootArtifactFile);
-
-            return SuppressedException.unwrapSuppressedException(() -> allClasses.stream()
-                            .map(FunctionWithThrowable.castFunctionWithThrowable(name -> Class.forName(name, false, classLoader)))
-                            .filter(cls -> cls.isAnnotationPresent(Service.class))
-                            .peek(this::checkClassRestrictions)
-                            .map(cls -> toServiceDescription(cls, projectBundle, classLoader))
-                            .collect(toList())
-                    , ClassNotFoundException.class);
-
-        } catch (IOException | ClassNotFoundException e) {
-            throw new GradleException(e.getMessage(), e);
-        }
-    }
-
-    private void checkClassRestrictions(Class<?> cls) {
-        if (cls.isLocalClass()) {
-            throw new GradleException("Local class could not be service!");
-        }
-        if (cls.isInterface()) {
-            throw new GradleException("Interfaces could not be service!");
-        }
-        if (cls.isAnonymousClass()) {
-            throw new GradleException("Anonymous class could not be service!");
-        }
-        if (cls.isMemberClass()) {
-            throw new GradleException("Member class could not be service!");
-        }
-        if (cls.isEnum()) {
-            throw new GradleException("Enum class could not be service!");
-        }
-        if (Modifier.isAbstract(cls.getModifiers())) {
-            throw new GradleException("Abstract class could not be service!");
-        }
-    }
-
-    private ServiceDescriptor toServiceDescription(Class<?> cls, ProjectBundle projectBundle, ServicesClassLoader classLoader) {
-        final List<Class<?>> implInterfaces = Lists.newArrayList();
-        walkClass(cls, implInterfaces);
-
-        final Service service = cls.getAnnotation(Service.class);
-        final String name = StringUtils.isNotBlank(service.value()) ? service.value() :
-                StringUtils.isNotBlank(service.name()) ? service.name() : "";
-
-        final Service.Type type = service.type();
-        final Service.InitType initType = service.initType();
-
-        final ServiceDescriptor.Builder builder = ServiceDescriptor.builder()
-                .setServiceImplName(cls.getName())
-                .setServiceName(name)
-                .setType(type)
-                .setInitType(initType);
-
-        implInterfaces.forEach(i -> {
-            final boolean isApiDependency = classLoader.getDependencyHolder(i)
-                    .map(projectBundle::isApiExport)
-                    .orElse(false);
-
-            builder.addInterface(i.getName(), isApiDependency ? ServiceDescriptor.AccessType.PUBLIC : ServiceDescriptor.AccessType.PRIVATE);
-        });
-
-        return builder.build();
-    }
-
-    private void walkClass(Class<?> cls, List<Class<?>> implInterfaces) {
-        if (!Object.class.equals(cls)) {
-            walkAllInterfaces(cls, implInterfaces);
-            walkClass(cls.getSuperclass(), implInterfaces);
-        }
-    }
-
-    private void walkAllInterfaces(Class<?> cls, List<Class<?>> implInterfaces) {
-        implInterfaces.addAll(Arrays.asList(cls.getInterfaces()));
-        Arrays.asList(cls.getInterfaces()).forEach(i -> walkAllInterfaces(i, implInterfaces));
-    }
-
-    private List<String> getAllClassesName(File rootArtifact) throws IOException {
-        try (JarFile jarFile = new JarFile(rootArtifact)) {
-            return jarFile.stream()
-                    .map(ZipEntry::getName)
-                    .filter(name -> name.endsWith(".class"))
-                    .map(name -> name.replace(".class", ""))
-                    .map(name -> name.replace('/', '.'))
-                    .collect(toList());
-        }
     }
 
     private void checkDependenciesAgainst(Project project, List<DependencyHolder> dependencies, List<DependencyHolder> allApiDependencies) {

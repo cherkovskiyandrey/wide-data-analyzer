@@ -1,4 +1,4 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.gradle.plugin.api;
 
 import java.util.Comparator;
 import java.util.Set;
@@ -11,6 +11,8 @@ public interface BundleArtifact {
     String getVersion();
 
     boolean isEmbedded();
+
+    Set<ServiceDescriptor> getServices();
 
     Set<Dependency> getApiExport();
 

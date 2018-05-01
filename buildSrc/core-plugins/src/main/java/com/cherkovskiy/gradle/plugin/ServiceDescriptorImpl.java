@@ -1,6 +1,7 @@
 package com.cherkovskiy.gradle.plugin;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
+import com.cherkovskiy.gradle.plugin.api.ServiceDescriptor;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 
@@ -14,15 +15,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 //TODO: move to common:application-context-common ???? нужно подождать как напишу плагин сборки плагинов - что там будет в манифесте - из него мы ведь будем читать
-public class ServiceDescriptor {
-
-    public enum AccessType {
-        PUBLIC,
-        PRIVATE,
-    }
-
+public class ServiceDescriptorImpl implements ServiceDescriptor {
     public static final String GROUP_SEPARATOR = ";";
-    public static final String SERVICE_IMPL_NAME = "class=>";
+    public static final String SERVICE_CLASS = "class=>";
     public static final String SERVICE_NAME = "name=>";
     public static final String TYPE = "type=>";
     public static final String INIT_TYPE = "initType=>";
@@ -31,7 +26,7 @@ public class ServiceDescriptor {
     public static final String ACCESS_TYPE = "accessType=>";
 
     private final static Pattern MAVEN_PATTERN = Pattern.compile("^" +
-            SERVICE_IMPL_NAME + "([^,]+)," +
+            SERVICE_CLASS + "([^,]+)," +
             SERVICE_NAME + "([^,]*)," +
             TYPE + "([^,]+)," +
             INIT_TYPE + "([^,]+)," +
@@ -44,29 +39,30 @@ public class ServiceDescriptor {
 
     private final String serviceImplName;
     private final String serviceName;
-    private final Service.Type type;
+    private final Service.LifecycleType lifecycleType;
     private final Service.InitType initType;
     private final Map<String, AccessType> interfaces;
 
-    private ServiceDescriptor(Builder builder) {
+    private ServiceDescriptorImpl(Builder builder) {
         this.serviceImplName = builder.serviceImplName;
         this.serviceName = builder.serviceName;
-        this.type = builder.type;
+        this.lifecycleType = builder.lifecycleType;
         this.initType = builder.initType;
         this.interfaces = Maps.newHashMap(builder.interfaces);
     }
 
     @Nonnull
-    public String toManifestString() {
+    public static String toManifestString(ServiceDescriptor serviceDescriptor) {
         final StringBuilder stringBuilder = new StringBuilder(1024);
 
-        stringBuilder.append(SERVICE_IMPL_NAME).append(serviceImplName).append(",");
-        stringBuilder.append(SERVICE_NAME).append(StringUtils.isNoneBlank(serviceName) ? serviceName : "").append(",");
-        stringBuilder.append(TYPE).append(type).append(",");
-        stringBuilder.append(INIT_TYPE).append(initType).append(",");
+        stringBuilder.append(SERVICE_CLASS).append(serviceDescriptor.getServiceClass()).append(",");
+        stringBuilder.append(SERVICE_NAME).append(StringUtils.isNoneBlank(serviceDescriptor.getServiceName()) ?
+                serviceDescriptor.getServiceName() : "").append(",");
+        stringBuilder.append(TYPE).append(serviceDescriptor.getLifecycleType()).append(",");
+        stringBuilder.append(INIT_TYPE).append(serviceDescriptor.getInitType()).append(",");
 
         stringBuilder.append(INTERFACES + "[");
-        stringBuilder.append(interfaces.entrySet().stream()
+        stringBuilder.append(serviceDescriptor.getInterfaces().entrySet().stream()
                 .map(entry -> String.format(CLASS + "%s," +
                                 ACCESS_TYPE + "%s",
                         entry.getKey(), entry.getValue()))
@@ -86,7 +82,7 @@ public class ServiceDescriptor {
 
         final Builder builder = builder().setServiceImplName(matcher.replaceFirst("$1"))
                 .setServiceName(matcher.replaceFirst("$2"))
-                .setType(Service.Type.valueOf(matcher.replaceFirst("$3")))
+                .setLifecycleType(Service.LifecycleType.valueOf(matcher.replaceFirst("$3")))
                 .setInitType(Service.InitType.valueOf(matcher.replaceFirst("$4")));
 
         String interfaces = matcher.replaceFirst("$5");
@@ -107,22 +103,27 @@ public class ServiceDescriptor {
         return builder.build();
     }
 
-    public String getServiceImplName() {
+    @Override
+    public String getServiceClass() {
         return serviceImplName;
     }
 
+    @Override
     public String getServiceName() {
         return serviceName;
     }
 
-    public Service.Type getType() {
-        return type;
+    @Override
+    public Service.LifecycleType getLifecycleType() {
+        return lifecycleType;
     }
 
+    @Override
     public Service.InitType getInitType() {
         return initType;
     }
 
+    @Override
     public Map<String, AccessType> getInterfaces() {
         return interfaces;
     }
@@ -135,24 +136,24 @@ public class ServiceDescriptor {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ServiceDescriptor that = (ServiceDescriptor) o;
+        ServiceDescriptorImpl that = (ServiceDescriptorImpl) o;
 
         return Objects.equals(serviceImplName, that.serviceImplName) &&
                 Objects.equals(serviceName, that.serviceName) &&
-                type == that.type &&
+                lifecycleType == that.lifecycleType &&
                 initType == that.initType &&
                 Objects.equals(interfaces, that.interfaces);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(serviceImplName, serviceName, type, initType, interfaces);
+        return Objects.hash(serviceImplName, serviceName, lifecycleType, initType, interfaces);
     }
 
     public static class Builder {
         private String serviceImplName;
         private String serviceName;
-        private Service.Type type = Service.Type.SINGLETON;
+        private Service.LifecycleType lifecycleType = Service.LifecycleType.SINGLETON;
         private Service.InitType initType = Service.InitType.LAZY;
         private final LinkedHashMap<String, AccessType> interfaces = Maps.newLinkedHashMap();
 
@@ -166,8 +167,8 @@ public class ServiceDescriptor {
             return this;
         }
 
-        public Builder setType(@Nonnull Service.Type type) {
-            this.type = type;
+        public Builder setLifecycleType(@Nonnull Service.LifecycleType lifecycleType) {
+            this.lifecycleType = lifecycleType;
             return this;
         }
 
@@ -182,11 +183,11 @@ public class ServiceDescriptor {
         }
 
         @Nonnull
-        public ServiceDescriptor build() {
+        public ServiceDescriptorImpl build() {
             if (StringUtils.isBlank(serviceImplName)) {
                 throw new IllegalArgumentException("serviceImplName is empty!");
             }
-            return new ServiceDescriptor(this);
+            return new ServiceDescriptorImpl(this);
         }
     }
 }

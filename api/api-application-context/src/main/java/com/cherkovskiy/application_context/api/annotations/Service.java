@@ -28,22 +28,22 @@ public @interface Service {
     String name() default "";
 
     /**
-     * Type of service.
-     * Default: {@link Type#SINGLETON}
+     * LifecycleType of service.
+     * Default: {@link LifecycleType#SINGLETON}
      *
      * @return
      */
-    Type type() default Type.SINGLETON;
+    LifecycleType lifecycleType() default LifecycleType.SINGLETON;
 
     /**
-     * Type of initialization.
+     * LifecycleType of initialization.
      * Default: {@link InitType#LAZY}
      *
      * @return
      */
     InitType initType() default InitType.EAGER;
 
-    enum Type {
+    enum LifecycleType {
         SINGLETON,
         PROTOTYPE
     }

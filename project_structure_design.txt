@@ -103,7 +103,7 @@ implementation project(':bundles:comprehensive-serializer:1.0-SNAPSHOT')
 - api - все апи (рекурсивно)
 - bundles - все бандлы
 - libs - все сторонние либы
-- манифест файл в котором описаны те бандлы, которые экспортит плагин и implementation-type бандл
+- манифест файл в котором описаны те бандлы, которые экспортит плагин и implementation-lifecycleType бандл
 
 (*)
 Так же плагин проверяет есть ли для всех api реализации и выводит предупреждение!

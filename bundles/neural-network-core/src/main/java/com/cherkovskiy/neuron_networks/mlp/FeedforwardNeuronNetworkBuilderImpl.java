@@ -131,7 +131,7 @@ public class FeedforwardNeuronNetworkBuilderImpl implements NeuronNetworkBuilder
 
         final String type = reader.readLine();
         if (!FeedforwardNeuronNetworkImpl.TYPE.equalsIgnoreCase(type)) {
-            throw new ClassNotFoundException("Incompatible type of NN: " + type + ". Only " + FeedforwardNeuronNetworkImpl.TYPE + " can be deserialized.");
+            throw new ClassNotFoundException("Incompatible lifecycleType of NN: " + type + ". Only " + FeedforwardNeuronNetworkImpl.TYPE + " can be deserialized.");
         }
 
         final String uuid = reader.readLine();

@@ -1,4 +1,4 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.gradle.plugin.api;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -17,6 +17,10 @@ public interface ResolvedBundleArtifact {
 
     @Nonnull
     File getFile();
+
+    //Bundle can export only services from api dependencies without services from transitive these api dependencies
+    @Nonnull
+    Set<ServiceDescriptor> getServices();
 
     @Nonnull
     Set<ResolvedDependency> getApiExport();

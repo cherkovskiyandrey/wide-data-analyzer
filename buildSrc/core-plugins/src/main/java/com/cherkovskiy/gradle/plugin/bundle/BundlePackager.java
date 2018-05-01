@@ -1,6 +1,8 @@
 package com.cherkovskiy.gradle.plugin.bundle;
 
 import com.cherkovskiy.gradle.plugin.*;
+import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
+import com.cherkovskiy.gradle.plugin.api.ServiceDescriptor;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
 import com.google.common.collect.Sets;
@@ -89,7 +91,7 @@ class BundlePackager implements Closeable {
         }
     }
 
-    public void addServices(List<ServiceDescriptor> serviceDescriptions) {
+    public void addServices(Set<ServiceDescriptor> serviceDescriptions) {
         this.serviceDescriptions.addAll(serviceDescriptions);
     }
 
@@ -98,8 +100,8 @@ class BundlePackager implements Closeable {
         final Attributes attributes = manifest.getMainAttributes();
 
         final String services = serviceDescriptions.stream()
-                .map(ServiceDescriptor::toManifestString)
-                .collect(joining(ServiceDescriptor.GROUP_SEPARATOR));
+                .map(ServiceDescriptorImpl::toManifestString)
+                .collect(joining(ServiceDescriptorImpl.GROUP_SEPARATOR));
         attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
 
         for (Map.Entry<BundleDependencyGroup, Set<ResolvedDependency>> entry : depGroupToManifestStr.entrySet()) {

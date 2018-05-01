@@ -45,7 +45,7 @@ public class DependencyScanner {
 
     public List<DependencyHolder> getResolvedDependenciesByType(ConfigurationTypes confType) {
         if (!confType.couldBeResolved()) {
-            throw new IllegalArgumentException(format("Dependency type %s could not be resolved.", confType.getGradleString()));
+            throw new IllegalArgumentException(format("Dependency lifecycleType %s could not be resolved.", confType.getGradleString()));
         }
 
         final List<DependencyHolder> dependencies = Lists.newArrayList();
