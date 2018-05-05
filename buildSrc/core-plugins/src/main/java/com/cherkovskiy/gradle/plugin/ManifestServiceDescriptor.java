@@ -6,16 +6,13 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 //TODO: move to common:application-context-common ???? нужно подождать как напишу плагин сборки плагинов - что там будет в манифесте - из него мы ведь будем читать
-public class ServiceDescriptorImpl implements ServiceDescriptor {
+public class ManifestServiceDescriptor implements ServiceDescriptor {
     public static final String GROUP_SEPARATOR = ";";
     public static final String SERVICE_CLASS = "class=>";
     public static final String SERVICE_NAME = "name=>";
@@ -43,7 +40,7 @@ public class ServiceDescriptorImpl implements ServiceDescriptor {
     private final Service.InitType initType;
     private final Map<String, AccessType> interfaces;
 
-    private ServiceDescriptorImpl(Builder builder) {
+    private ManifestServiceDescriptor(Builder builder) {
         this.serviceImplName = builder.serviceImplName;
         this.serviceName = builder.serviceName;
         this.lifecycleType = builder.lifecycleType;
@@ -73,34 +70,38 @@ public class ServiceDescriptorImpl implements ServiceDescriptor {
         return stringBuilder.toString();
     }
 
-    public static ServiceDescriptor fromManifestString(String serviceDescAsStr) {
-        Matcher matcher = MAVEN_PATTERN.matcher(serviceDescAsStr);
+    public static Set<ServiceDescriptor> fromManifestString(String serviceDescAsStr) {
+        return Arrays.stream(serviceDescAsStr.split(GROUP_SEPARATOR))
+                .map(str -> {
+                    Matcher matcher = MAVEN_PATTERN.matcher(str);
 
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Invalid format: " + serviceDescAsStr);
-        }
+                    if (!matcher.matches()) {
+                        throw new IllegalArgumentException("Invalid format: " + serviceDescAsStr);
+                    }
 
-        final Builder builder = builder().setServiceImplName(matcher.replaceFirst("$1"))
-                .setServiceName(matcher.replaceFirst("$2"))
-                .setLifecycleType(Service.LifecycleType.valueOf(matcher.replaceFirst("$3")))
-                .setInitType(Service.InitType.valueOf(matcher.replaceFirst("$4")));
+                    final Builder builder = builder().setServiceImplName(matcher.replaceFirst("$1"))
+                            .setServiceName(matcher.replaceFirst("$2"))
+                            .setLifecycleType(Service.LifecycleType.valueOf(matcher.replaceFirst("$3")))
+                            .setInitType(Service.InitType.valueOf(matcher.replaceFirst("$4")));
 
-        String interfaces = matcher.replaceFirst("$5");
-        matcher = MAVEN_INTERFACES_PATTERN.matcher(interfaces);
+                    String interfaces = matcher.replaceFirst("$5");
+                    matcher = MAVEN_INTERFACES_PATTERN.matcher(interfaces);
 
+                    int end = 0;
+                    while (matcher.find()) {
+                        int start = matcher.start();
+                        if (end != 0 && (interfaces.charAt(end) != ',' || start != end + 1)) {
+                            throw new IllegalArgumentException("Invalid format: " + serviceDescAsStr);
+                        }
+                        end = matcher.end();
 
-        int end = 0;
-        while (matcher.find()) {
-            int start = matcher.start();
-            if (end != 0 && (interfaces.charAt(end) != ',' || start != end + 1)) {
-                throw new IllegalArgumentException("Invalid format: " + serviceDescAsStr);
-            }
-            end = matcher.end();
+                        builder.addInterface(matcher.group(1), AccessType.valueOf(matcher.group(2)));
+                    }
 
-            builder.addInterface(matcher.group(1), AccessType.valueOf(matcher.group(2)));
-        }
+                    return builder.build();
+                })
+                .collect(Collectors.toSet());
 
-        return builder.build();
     }
 
     @Override
@@ -136,7 +137,7 @@ public class ServiceDescriptorImpl implements ServiceDescriptor {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ServiceDescriptorImpl that = (ServiceDescriptorImpl) o;
+        ManifestServiceDescriptor that = (ManifestServiceDescriptor) o;
 
         return Objects.equals(serviceImplName, that.serviceImplName) &&
                 Objects.equals(serviceName, that.serviceName) &&
@@ -183,11 +184,11 @@ public class ServiceDescriptorImpl implements ServiceDescriptor {
         }
 
         @Nonnull
-        public ServiceDescriptorImpl build() {
+        public ManifestServiceDescriptor build() {
             if (StringUtils.isBlank(serviceImplName)) {
                 throw new IllegalArgumentException("serviceImplName is empty!");
             }
-            return new ServiceDescriptorImpl(this);
+            return new ManifestServiceDescriptor(this);
         }
     }
 }

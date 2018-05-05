@@ -4,6 +4,7 @@ import com.cherkovskiy.gradle.plugin.api.Dependency;
 import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
@@ -20,7 +21,7 @@ public class ManifestArtifact implements Dependency {
     private final String version;
     private final String fileName;
 
-    public ManifestArtifact(@Nonnull String group, @Nonnull String name, @Nonnull String version, @Nonnull String fileName) {
+    public ManifestArtifact(@Nonnull String group, @Nonnull String name, @Nonnull String version, @Nullable String fileName) {
         this.group = group;
         this.name = name;
         this.version = version;
@@ -45,7 +46,8 @@ public class ManifestArtifact implements Dependency {
         return version;
     }
 
-    @Nonnull
+    @Override
+    @Nullable
     public String getFileName() {
         return fileName;
     }

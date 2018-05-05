@@ -1,10 +1,10 @@
 package com.cherkovskiy.gradle.plugin.bundle;
 
-import com.cherkovskiy.application_context.api.annotations.Service;
-import com.cherkovskiy.gradle.plugin.*;
+import com.cherkovskiy.gradle.plugin.DependencyHolder;
+import com.cherkovskiy.gradle.plugin.DependencyScanner;
+import com.cherkovskiy.gradle.plugin.SubProjectTypes;
+import com.cherkovskiy.gradle.plugin.Utils;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import org.apache.commons.lang3.StringUtils;
 import org.gradle.BuildListener;
 import org.gradle.BuildResult;
 import org.gradle.api.GradleException;
@@ -14,25 +14,16 @@ import org.gradle.api.initialization.Settings;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.jvm.tasks.Jar;
-import org.slieb.throwables.FunctionWithThrowable;
-import org.slieb.throwables.SuppressedException;
 
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.jar.JarFile;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
 
 import static com.cherkovskiy.gradle.plugin.ConfigurationTypes.API;
 import static com.cherkovskiy.gradle.plugin.ConfigurationTypes.STUFF_ALL_API;
 import static com.cherkovskiy.gradle.plugin.Utils.subProjectAgainst;
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
 
 public class BundlePlugin implements Plugin<Project> {
     private static final ImmutableSet<SubProjectTypes> ALLOWED_TO_DEPENDS_ON_LIST = new ImmutableSet.Builder<SubProjectTypes>()
@@ -87,6 +78,11 @@ public class BundlePlugin implements Plugin<Project> {
                     configuration.embeddedDependencies,
                     runtimeConfDependencies,
                     apiConfDependencies);
+
+            if (bundleArtifact.getServices().isEmpty()) {
+                throw new GradleException(format("Bundle must has at least one service. There are not any services in bundle: %s",
+                        project.getPath()));
+            }
 
             try (BundlePackager bundleArchive = new BundlePackager(bundleArtifact.getFile(), bundleArtifact.isEmbedded())) {
                 bundleArchive.setBundleNameVersion(bundleArtifact.getName(), bundleArtifact.getVersion());

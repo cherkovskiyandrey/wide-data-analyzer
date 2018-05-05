@@ -5,7 +5,9 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
@@ -34,27 +36,8 @@ public class Utils {
             throw new GradleException(format("%s could depends only on: %s. There is forbidden dependencies: %s",
                     project.getPath(),
                     allowedSubProjects.stream().map(SubProjectTypes::getSubGroupName).collect(joining(", ")),
-                    forbiddenDependencies.stream().map(DependencyHolder::toString).collect(joining(", "))
+                    forbiddenDependencies.stream().map(dependencyHolder -> dependencyHolder.toString()).collect(joining(", "))
             ));
         }
-    }
-
-
-    public static <T> String collectionToDeepString(Collection<T> collection) {
-    return collectionToDeepStringHelper();
-    }
-        public static <T> String collectionToDeepString(Collection<T> collection) {
-        return collection.stream()
-                .map(t -> {
-                    if (t instanceof Collection) {
-                        return collectionToDeepString(t);
-                    } else if (t instanceof Map) {
-                        return collectionToDeepString(t);
-                    } else if (t.getClass().isArray()) {
-                        return collectionToDeepString(Arrays.asList(t));
-                    }
-                    return t.toString();
-                })
-                .collect(joining(", "));
     }
 }

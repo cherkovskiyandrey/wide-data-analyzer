@@ -53,6 +53,16 @@ public class DependencyHolder implements ResolvedDependency {
         return version;
     }
 
+    @Nullable
+    @Override
+    public String getFileName() {
+        return getArtifacts().stream()
+                .filter(DependencyHolder::isArchive)
+                .map(File::getName)
+                .findFirst()
+                .orElse(null);
+    }
+
     @Override
     @Nonnull
     public File getFile() {

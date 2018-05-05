@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -100,8 +99,8 @@ class BundlePackager implements Closeable {
         final Attributes attributes = manifest.getMainAttributes();
 
         final String services = serviceDescriptions.stream()
-                .map(ServiceDescriptorImpl::toManifestString)
-                .collect(joining(ServiceDescriptorImpl.GROUP_SEPARATOR));
+                .map(ManifestServiceDescriptor::toManifestString)
+                .collect(joining(ManifestServiceDescriptor.GROUP_SEPARATOR));
         attributes.put(new Attributes.Name(EXPORTED_SERVICES), services);
 
         for (Map.Entry<BundleDependencyGroup, Set<ResolvedDependency>> entry : depGroupToManifestStr.entrySet()) {

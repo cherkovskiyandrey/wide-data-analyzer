@@ -2,7 +2,7 @@ package com.cherkovskiy.gradle.plugin.bundle;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.gradle.plugin.DependencyHolder;
-import com.cherkovskiy.gradle.plugin.ServiceDescriptorImpl;
+import com.cherkovskiy.gradle.plugin.ManifestServiceDescriptor;
 import com.cherkovskiy.gradle.plugin.ServicesClassLoader;
 import com.cherkovskiy.gradle.plugin.SubProjectTypes;
 import com.cherkovskiy.gradle.plugin.api.Dependency;
@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.JarFile;
@@ -30,7 +29,7 @@ import java.util.zip.ZipEntry;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-public class ProjectBundle implements ResolvedBundleArtifact {
+class ProjectBundle implements ResolvedBundleArtifact {
     private final File archivePath;
     private final String name;
     private final String version;
@@ -39,7 +38,7 @@ public class ProjectBundle implements ResolvedBundleArtifact {
     private final List<DependencyHolder> apiConfDependencies;
     private final Set<ServiceDescriptor> services;
 
-    public ProjectBundle(File archivePath,
+    ProjectBundle(File archivePath,
                          String name,
                          String version,
                          boolean embeddedDependencies,
@@ -96,7 +95,7 @@ public class ProjectBundle implements ResolvedBundleArtifact {
         }
     }
 
-    private ServiceDescriptorImpl toServiceDescription(Class<?> cls, ServicesClassLoader classLoader) {
+    private ManifestServiceDescriptor toServiceDescription(Class<?> cls, ServicesClassLoader classLoader) {
         final List<Class<?>> implInterfaces = Lists.newArrayList();
         walkClass(cls, implInterfaces);
 
@@ -107,7 +106,7 @@ public class ProjectBundle implements ResolvedBundleArtifact {
         final Service.LifecycleType lifecycleType = service.lifecycleType();
         final Service.InitType initType = service.initType();
 
-        final ServiceDescriptorImpl.Builder builder = ServiceDescriptorImpl.builder()
+        final ManifestServiceDescriptor.Builder builder = ManifestServiceDescriptor.builder()
                 .setServiceImplName(cls.getName())
                 .setServiceName(name)
                 .setLifecycleType(lifecycleType)
@@ -118,7 +117,7 @@ public class ProjectBundle implements ResolvedBundleArtifact {
                     .map(this::isApiExport)
                     .orElse(false);
 
-            builder.addInterface(i.getName(), isApiDependency ? ServiceDescriptorImpl.AccessType.PUBLIC : ServiceDescriptorImpl.AccessType.PRIVATE);
+            builder.addInterface(i.getName(), isApiDependency ? ManifestServiceDescriptor.AccessType.PUBLIC : ManifestServiceDescriptor.AccessType.PRIVATE);
         });
 
         return builder.build();
@@ -251,7 +250,7 @@ public class ProjectBundle implements ResolvedBundleArtifact {
                 ", name='" + name + '\'' +
                 ", version='" + version + '\'' +
                 ", embeddedDependencies=" + embeddedDependencies +
-                ", runtimeConfDependencies=" + collectionToDeepString(runtimeConfDependencies) +
+                ", runtimeConfDependencies=" + runtimeConfDependencies +
                 ", apiConfDependencies=" + apiConfDependencies +
                 ", services=" + services +
                 '}';

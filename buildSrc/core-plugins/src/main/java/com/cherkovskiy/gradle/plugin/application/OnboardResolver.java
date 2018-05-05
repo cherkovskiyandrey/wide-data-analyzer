@@ -1,10 +1,10 @@
 package com.cherkovskiy.gradle.plugin.application;
 
 import com.cherkovskiy.gradle.plugin.*;
+import com.cherkovskiy.gradle.plugin.api.BundleResolver;
 import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
 import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
-import com.cherkovskiy.gradle.plugin.bundle.BundlePackagerConfiguration;
-import com.cherkovskiy.gradle.plugin.bundle.ProjectBundle;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
@@ -24,9 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static com.cherkovskiy.gradle.plugin.ConfigurationTypes.API;
 import static java.lang.String.format;
 
 class OnboardResolver implements Closeable {
@@ -75,9 +73,9 @@ class OnboardResolver implements Closeable {
                 }
             }
         }
-//
-//        final ResolvedBundleArtifact inplaceBundle = getBundleFromProject(project);
-//        this.currentBundle = inplaceBundle.
+
+        final ResolvedBundleArtifact currentBundle = getBundleFromProject(project);
+        this.currentBundle = currentBundle.getServices().isEmpty() ? null : currentBundle;
     }
 
     /**
@@ -87,19 +85,14 @@ class OnboardResolver implements Closeable {
         return bundles;
     }
 
-    private ResolvedBundleArtifact getBundleFromProject(Project depProject) {
+    private ResolvedBundleArtifact getBundleFromProject(Project depProject) throws IOException {
         final DependencyScanner dependencyScanner = new DependencyScanner(depProject);
-        final List<DependencyHolder> runtimeConfDependencies = dependencyScanner.getRuntimeDependencies();
-        final List<DependencyHolder> apiConfDependencies = dependencyScanner.getDependenciesByType(API);
+        final List<DependencyHolder> dependencies = dependencyScanner.getRuntimeDependencies();
+        final BundleResolver resolver = new ProjectBundleResolver(Lists.newArrayList(dependencies));
         final Jar jarTask = depProject.getTasks().withType(Jar.class).iterator().next();
-        final BundlePackagerConfiguration configuration = project.getExtensions().getByType(BundlePackagerConfiguration.class);
+        final BundleFile bundleFile = new BundleFile(jarTask.getArchivePath());
 
-        return new ProjectBundle(jarTask.getArchivePath(),
-                jarTask.getBaseName(),
-                jarTask.getVersion(),
-                configuration.embeddedDependencies,
-                runtimeConfDependencies,
-                apiConfDependencies);
+        return resolver.resolve(bundleFile);
     }
 
     private ResolvedBundleArtifact getBundleFromArtifact(Dependency bundle) throws IOException {
@@ -112,23 +105,15 @@ class OnboardResolver implements Closeable {
                 .orElseThrow(() -> new IllegalStateException(""));
 
         final BundleFile bundleFile = new BundleFile(root.getFile());
+        final BundleResolver resolver;
         if (bundleFile.isEmbedded()) {
             final File bundleUnpackDir = new File(baseTmpDir, bundleFile.getName());
             FileUtils.forceMkdir(bundleUnpackDir);
-            return bundleFile.resolveTo(bundleUnpackDir);
-
+            resolver = new EmbeddedResolver(bundleUnpackDir);
         } else {
-            final List<DependencyHolder> apiExport = dependencies.stream()
-                    .filter(dh -> bundleFile.getApiExport().contains(dh))
-                    .collect(Collectors.toList());
-
-            return new ProjectBundle(root.getFile(),
-                    root.getName(),
-                    root.getVersion(),
-                    false,
-                    dependencies.stream().filter(d -> !d.equals(root)).collect(Collectors.toList()),
-                    apiExport);
+            resolver = new ProjectBundleResolver(Lists.newArrayList(dependencies));
         }
+        return resolver.resolve(bundleFile);
     }
 
 
@@ -152,8 +137,7 @@ class OnboardResolver implements Closeable {
     }
 
     public Optional<ResolvedBundleArtifact> getCurrentBundle() {
-        //todo: может и не быть
-        return getBundleFromProject(project);
+        return Optional.ofNullable(currentBundle);
     }
 
     public ResolvedDependency getApplicationStarter() {
