@@ -57,9 +57,9 @@ class ApplicationPackager implements Closeable {
         putDependencies(ApplicationDirectories.LIB_INTERNAL, internal);
     }
 
-    public void putApplicationStarter(ResolvedDependency applicationStarter) throws IOException {
-        try (InputStream inputStream = FileUtils.openInputStream(applicationStarter.getFile())) {
-            directory.createIfNotExists(ApplicationDirectories.BIN + applicationStarter.getFile().getName(), inputStream, null);
+    public void putApplicationStarter(File applicationStarter) throws IOException {
+        try (InputStream inputStream = FileUtils.openInputStream(applicationStarter)) {
+            directory.createIfNotExists(ApplicationDirectories.BIN + applicationStarter.getName(), inputStream, null);
         }
     }
 

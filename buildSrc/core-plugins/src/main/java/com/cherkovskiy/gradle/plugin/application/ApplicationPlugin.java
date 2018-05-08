@@ -3,6 +3,7 @@ package com.cherkovskiy.gradle.plugin.application;
 import com.cherkovskiy.gradle.plugin.api.Dependency;
 import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
 import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
+import com.cherkovskiy.gradle.plugin.api.ResolvedProjectArtifact;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePlugin;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -49,17 +50,21 @@ public class ApplicationPlugin implements Plugin<Project> {
             try (final OnboardResolver onboardResolver = new OnboardResolver(project, configuration)) {
                 final Optional<ResolvedBundleArtifact> currentBundle = onboardResolver.getCurrentBundle();
                 final Set<ResolvedBundleArtifact> bundles = onboardResolver.getBundles();
-                final ResolvedDependency applicationStarter = onboardResolver.getApplicationStarter();
+                final ResolvedProjectArtifact applicationStarter = onboardResolver.getApplicationStarter();
                 final Set<ResolvedBundleArtifact> allBundles = Sets.newHashSet(bundles);
                 currentBundle.ifPresent(allBundles::add);
 
-                final boolean isCorrected = checkCommonDependencies(allBundles, configuration.failOnErrors, project.getLogger());
+                if (Objects.isNull(applicationStarter)) {
+                    throw new GradleException(format("Could not declared application starter in %s configuration", OnboardResolver.ONBOARD_CONF_NAME));
+                }
+
+                final boolean isCorrected = checkCommonDependencies(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter
 
                 if (isCorrected) {
                     checkImplExternalDependencies(allBundles, configuration.failOnErrors, project.getLogger());
                 }
-                checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger());
-                checkUnprovidedApi(allBundles, configuration.failOnErrors, project.getLogger());
+                checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter
+                checkUnprovidedApi(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: учесть applicationStarter - у него все его апи external
 
                 final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
                 final String targetArtifact = Paths.get(jarTask.getDestinationDir().getAbsolutePath(),
@@ -71,7 +76,7 @@ public class ApplicationPlugin implements Plugin<Project> {
                     final File resourcesPath = Paths.get(rootProjectPath, configuration.pathToBinsResources).toFile();
 
                     applicationPackager.copyResources(resourcesPath, "bin");
-                    applicationPackager.putApplicationStarter(applicationStarter);
+                    applicationPackager.putApplicationStarter(applicationStarter.getFile());
                     applicationPackager.putApi(getDependenciesBy(allBundles, artifact ->
                             ImmutableList.<ResolvedDependency>builder().addAll(artifact.getApiExport()).addAll(artifact.getApiImport()).build()));
 
@@ -79,9 +84,17 @@ public class ApplicationPlugin implements Plugin<Project> {
                         applicationPackager.putAppBundle(currentBundle.get());
                     }
                     applicationPackager.putBundles(bundles);
+
+                    applicationPackager.putCommon(applicationStarter.getCommon());
                     applicationPackager.putCommon(getDependenciesBy(allBundles, ResolvedBundleArtifact::getCommon));
+
+                    applicationPackager.putExternal(applicationStarter.get3rdParty());
                     applicationPackager.putExternal(getDependenciesBy(allBundles, ResolvedBundleArtifact::getImplExternal));
+
+                    applicationPackager.putInternal(applicationStarter.getInternal());
                     applicationPackager.putInternal(getDependenciesBy(allBundles, ResolvedBundleArtifact::getImplInternal));
+
+                    //TODO: проанализировать нужно ли указывать зависимости стартера в его манифесте + в какой класс лоадер будет грузиться код application context
                 }
             } catch (IOException e) {
                 throw new GradleException(e.getMessage(), e);

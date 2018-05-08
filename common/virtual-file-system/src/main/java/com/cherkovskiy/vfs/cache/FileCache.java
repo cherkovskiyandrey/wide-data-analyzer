@@ -53,8 +53,6 @@ public interface FileCache extends Iterable<String> {
     @Nullable
     Attributes getAttributes(String filePath);
 
-    boolean isFile(String filePath);
-
     /**
      * <ol>
      * <li>Allotment unregistered directories</li>

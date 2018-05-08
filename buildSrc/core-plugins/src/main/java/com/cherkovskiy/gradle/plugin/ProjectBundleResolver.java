@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
+
 public class ProjectBundleResolver implements BundleResolver {
 
     private final List<ResolvedDependency> resolvedDependencies;
@@ -36,7 +38,7 @@ public class ProjectBundleResolver implements BundleResolver {
                 .map(dependency -> resolvedDependencies.stream()
                         .filter(resolvedDependency -> Dependency.COMPARATOR.compare(dependency, resolvedDependency) == 0)
                         .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("TODO")))
+                        .orElseThrow(() -> new IllegalStateException(format("Could not resolve dependency %s", Dependency.toString(dependency)))))
                 .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 }

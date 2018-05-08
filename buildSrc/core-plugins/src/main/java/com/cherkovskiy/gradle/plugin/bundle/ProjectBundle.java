@@ -229,8 +229,7 @@ class ProjectBundle implements ResolvedBundleArtifact {
     public Set<ResolvedDependency> getImplExternal() {
         final Set<ResolvedDependency> common = getCommon();
         return runtimeConfDependencies.stream()
-                .filter(dep -> !dep.isNative())
-                .filter(dep -> !common.contains(dep))
+                .filter(dep -> !dep.isNative() && !common.contains(dep))
                 .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 

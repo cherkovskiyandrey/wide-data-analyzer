@@ -47,7 +47,7 @@ public class EmbeddedResolver implements BundleResolver {
                     .build();
 
         } catch (IOException e) {
-            throw new IllegalStateException("TODO", e);
+            throw new IllegalStateException(format("Could not resolve not embedded bundle file: %s", artifact.getFile().getAbsolutePath()), e);
         }
     }
 

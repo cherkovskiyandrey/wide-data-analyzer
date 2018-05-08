@@ -22,6 +22,9 @@ import java.util.Iterator;
 import java.util.SortedMap;
 import java.util.UUID;
 
+import static com.cherkovskiy.vfs.DirectoryUtils.isFile;
+import static com.cherkovskiy.vfs.DirectoryUtils.normalizePath;
+
 @NotThreadSafe
 public class FileSystemCache implements FileCache {
 
@@ -29,9 +32,9 @@ public class FileSystemCache implements FileCache {
 
         @Override
         public int compare(String left, String right) {
-            if (!isFileHelper(left) && isFileHelper(right)) {
+            if (!isFile(left) && isFile(right)) {
                 return -1;
-            } else if (isFileHelper(left) && !isFileHelper(right)) {
+            } else if (isFile(left) && !isFile(right)) {
                 return 1;
             }
             int depth = StringUtils.countMatches(left, "/") - StringUtils.countMatches(right, "/");
@@ -62,7 +65,7 @@ public class FileSystemCache implements FileCache {
 
     @Override
     public boolean contain(String path) {
-        return entryToAttr.containsKey(normalizePath(path));
+        return entryToAttr.containsKey(normalizePath(path, false));
     }
 
     @Override
@@ -71,7 +74,7 @@ public class FileSystemCache implements FileCache {
             return null;
         }
         try {
-            return new FileInputStream(mapToUniqueFileInTmpDir(normalizePath(path)).toFile());
+            return new FileInputStream(mapToUniqueFileInTmpDir(normalizePath(path, true)).toFile());
         } catch (IOException e) {
             throw new DirectoryException(e);
         }
@@ -79,7 +82,7 @@ public class FileSystemCache implements FileCache {
 
     @Override
     public void put(String path, InputStream inputStream, Attributes attributes) {
-        path = normalizePath(path);
+        path = normalizePath(path, true);
         if (!contain(path)) {
             if (isFile(path)) {
                 try {
@@ -96,21 +99,9 @@ public class FileSystemCache implements FileCache {
         }
     }
 
-    private static String normalizePath(String path) {
-        final String result = FilenameUtils.normalize(path, true);
-        if (StringUtils.isBlank(result)) {
-            throw new DirectoryException("Path is empty: " + path);
-        }
-
-        if (result.charAt(0) == '/') {
-            return result.substring(1, result.length());
-        }
-        return result;
-    }
-
     @Override
     public boolean remove(String path, boolean removeEmptyFolders) {
-        path = normalizePath(path);
+        path = normalizePath(path, true);
         boolean result = false;
 
         if (isFile(path)) {
@@ -148,7 +139,7 @@ public class FileSystemCache implements FileCache {
             return null;
         }
         try {
-            return mapToUniqueFileInTmpDir(normalizePath(path)).toFile();
+            return mapToUniqueFileInTmpDir(normalizePath(path, true)).toFile();
         } catch (IOException e) {
             throw new DirectoryException(e);
         }
@@ -157,16 +148,6 @@ public class FileSystemCache implements FileCache {
     @Override
     public Attributes getAttributes(String filePath) {
         return entryToAttr.get(filePath);
-    }
-
-    @Override
-    public boolean isFile(String filePath) {
-        return isFileHelper(filePath);
-    }
-
-    private static boolean isFileHelper(String filePath) {
-        final String normalizedName = normalizePath(filePath);
-        return !normalizedName.endsWith("/");
     }
 
     @Override
