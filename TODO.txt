@@ -34,16 +34,13 @@
 - разделить api зависимости в манифесте на api-export и api-import (+)
 - сопровождать в манифесте зависимость группой-именем-версией (+)
 - отвязаться от хардкода проектных путей в плагинах градла - для возможности создавать потом бандлы и плагины из вне (+)
-
 - application-packager: сбор всех бандлов, апи, сторонних либ, общих библиотек и их размещенние по каталогам (-)
 	* перетащить и адаптировать vfs проект (+)
 	* подключиться к vfs проекту (+)
 	* вытащить все onboard бандл зависимости и положить их в core_bundles, а если бандл без embedded зависимостей,
-		то вытащить транзитивные зависимости и положить соответственно по api, lib\common, lib\wda, lib  (-)
+		то вытащить транзитивные зависимости и положить соответственно по api, lib\common, lib\wda, lib  (+)
 	* проблема с onboard - не все зависимости на момент build собрались!!!!!! (+)
 		-> так же проверить как отрабатывает STUFF_ALL_API!!!!! (+) - тоже нет, но и не важно - там просто сопоставляем зависимости!
-
-
 - application-packager: повторить логику createAndInitStuffApiConfig - только собрать уже все бандлы, в том числе и 3rd party бандлы,
 вытащить из них api и 3rd party api, проверить checkDependenciesAgainst, кинуть ошибку (+)
     //TODO: gather all api not only from project but from 3rd bundles from maven repo.
@@ -54,8 +51,11 @@
 
 - implementation project(':applications:application-starter') (-)
 
-- переименовать группу com.cherkovskiy на com.wide_data_analyzer (-)
+- оттестировать работу плагинов (-)
 
+- описать и начать разработку application-context и application-starter (-)
+
+- переименовать группу com.cherkovskiy на com.wide_data_analyzer (-)
 
 - Начать разработку plugin-packager плагина (-)
 

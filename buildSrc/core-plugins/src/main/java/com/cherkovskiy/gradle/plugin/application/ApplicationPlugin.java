@@ -50,7 +50,7 @@ public class ApplicationPlugin implements Plugin<Project> {
             try (final OnboardResolver onboardResolver = new OnboardResolver(project, configuration)) {
                 final Optional<ResolvedBundleArtifact> currentBundle = onboardResolver.getCurrentBundle();
                 final Set<ResolvedBundleArtifact> bundles = onboardResolver.getBundles();
-                final ResolvedProjectArtifact applicationStarter = onboardResolver.getApplicationStarter();
+                ResolvedProjectArtifact applicationStarter = onboardResolver.getApplicationStarter();
                 final Set<ResolvedBundleArtifact> allBundles = Sets.newHashSet(bundles);
                 currentBundle.ifPresent(allBundles::add);
 
@@ -65,6 +65,8 @@ public class ApplicationPlugin implements Plugin<Project> {
                 }
                 checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter
                 checkUnprovidedApi(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: учесть applicationStarter - у него все его апи external
+
+                applicationStarter = StarterPatcher.patch(applicationStarter, task.getTemporaryDir());
 
                 final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
                 final String targetArtifact = Paths.get(jarTask.getDestinationDir().getAbsolutePath(),
