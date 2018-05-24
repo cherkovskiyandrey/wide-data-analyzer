@@ -47,9 +47,8 @@
     //for example, this bundles could embedded new api with new external common dependencies
     //this method could not get these dependencies and this class could not invoke checkDependenciesAgainst with this considerate.
 - application-packager: ревизия не реализованных API с предупреждением (+)
+- implementation project(':applications:application-starter') (+)
 
-
-- implementation project(':applications:application-starter') (-)
 
 - оттестировать работу плагинов (-)
 

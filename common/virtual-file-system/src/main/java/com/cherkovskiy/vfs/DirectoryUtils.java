@@ -24,7 +24,7 @@ public class DirectoryUtils {
         final Predicate<DirectoryEntry> fromFilter;
         if (StringUtils.isNotBlank(normalizedFromDir)) {
             DirectoryEntry fromDirEntry = from.findByName(normalizedFromDir);
-            if (Objects.isNull(fromDirEntry)) {
+            if (Objects.isNull(fromDirEntry) || !fromDirEntry.isDirectory()) {
                 throw new DirectoryException(format("From sub-directory: %s does not exists in from directory: %s", fromDir, from.getMainFile().getAbsolutePath()));
             }
             fromFilter = directoryEntry -> directoryEntry.getPath().startsWith(normalizedFromDir);
@@ -50,7 +50,7 @@ public class DirectoryUtils {
     @Nonnull
     public static String normalizeAsDir(String dir) {
         dir = normalizePath(dir, false);
-        return StringUtils.isNotBlank(dir) && dir.endsWith("/") ? dir.concat("/") : dir;
+        return StringUtils.isNotBlank(dir) && !dir.endsWith("/") ? dir.concat("/") : dir;
     }
 
 

@@ -58,13 +58,13 @@ public class ApplicationPlugin implements Plugin<Project> {
                     throw new GradleException(format("Could not declared application starter in %s configuration", OnboardResolver.ONBOARD_CONF_NAME));
                 }
 
-                final boolean isCorrected = checkCommonDependencies(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter
+                final boolean isCorrected = checkCommonDependencies(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter если нужно, если его код будет грузиться дефолтным класс лоадером
 
                 if (isCorrected) {
                     checkImplExternalDependencies(allBundles, configuration.failOnErrors, project.getLogger());
                 }
-                checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter
-                checkUnprovidedApi(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: учесть applicationStarter - у него все его апи external
+                checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter если нужно, если его код будет грузиться дефолтным класс лоадером
+                checkUnprovidedApi(allBundles, applicationStarter.getApi(), configuration.failOnErrors, project.getLogger());
 
                 applicationStarter = StarterPatcher.patch(applicationStarter, task.getTemporaryDir());
 
@@ -110,7 +110,7 @@ public class ApplicationPlugin implements Plugin<Project> {
                 .collect(toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
-    private boolean checkUnprovidedApi(Set<ResolvedBundleArtifact> allBundles, boolean failOnErrors, Logger logger) {
+    private boolean checkUnprovidedApi(Set<ResolvedBundleArtifact> allBundles, Set<ResolvedDependency> excludedApi, boolean failOnErrors, Logger logger) {
         final Set<ResolvedDependency> exportApi = allBundles.stream()
                 .flatMap(bundle -> bundle.getApiExport().stream())
                 .collect(toCollection(() -> Sets.newTreeSet(ResolvedDependency.COMPARATOR)));
@@ -124,7 +124,7 @@ public class ApplicationPlugin implements Plugin<Project> {
 
         final List<String> errors = Lists.newArrayList();
         for (Map.Entry<ResolvedDependency, Set<ResolvedBundleArtifact>> entry : importApi.entrySet()) {
-            if (!exportApi.contains(entry.getKey())) {
+            if (!exportApi.contains(entry.getKey()) && !excludedApi.contains(entry.getKey())) {
                 errors.add(format("Next bundles required of api \"%s\". But there is not bundle with implementations. Bundles: %s",
                         Dependency.toString(entry.getKey()),
                         entry.getValue().stream().map(artifact -> ResolvedBundleArtifact.toString(artifact)).collect(joining("; "))
