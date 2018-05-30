@@ -3,6 +3,8 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'maven'
 
+getTasks().getByName('build').dependsOn(getTasks().getByName('install'))
+
 dependencies {
     api dependencyManagement['com.google.code.findbugs:jsr305']
 

@@ -3,6 +3,10 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'maven'
 
+
+//TODO: just to test dependencies from repository
+getTasks().getByName('build').dependsOn(getTasks().getByName('install'))
+
 dependencies {
 
     //To expose

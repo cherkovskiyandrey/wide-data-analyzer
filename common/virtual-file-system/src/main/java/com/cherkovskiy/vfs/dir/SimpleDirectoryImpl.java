@@ -7,6 +7,7 @@ import com.cherkovskiy.vfs.MutableDirectory;
 import com.cherkovskiy.vfs.exceptions.DirectoryException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -88,12 +89,16 @@ class SimpleDirectoryImpl extends BaseDirectory implements MutableDirectory {
     @Override
     public DirectoryEntry createIfNotExists(@Nonnull String path, @Nullable InputStream inputStream, @Nullable Attributes attributes) {
         try {
-            final File newFile = Paths.get(getMainFile().getCanonicalPath(), path).toFile();
+            String normalizedPath = FilenameUtils.normalize(String.join("/", getMainFile().getCanonicalPath(), path), true);
+            final File newFile = FileUtils.getFile(normalizedPath);
+
             if (!newFile.exists()) {
-                if (isDirectory(newFile)) {
+                if (isDirectory(normalizedPath)) {
                     FileUtils.forceMkdir(newFile);
+                } else if (!Objects.isNull(inputStream)) {
+                    FileUtils.copyInputStreamToFile(inputStream, newFile);
                 } else {
-                    FileUtils.copyInputStreamToFile(Objects.requireNonNull(inputStream), newFile);
+                    FileUtils.touch(newFile);
                 }
                 if (attributes != null) {
                     AttributeHelper.setAttributes(newFile, attributes);
@@ -107,8 +112,8 @@ class SimpleDirectoryImpl extends BaseDirectory implements MutableDirectory {
         return null;
     }
 
-    private boolean isDirectory(@Nonnull File file) {
-        return file.exists() ? file.isDirectory() : FilenameUtils.normalize(file.getAbsolutePath(), true).endsWith("/");
+    private boolean isDirectory(@Nonnull String file) {
+        return StringUtils.isNotBlank(file) && file.endsWith("/");
     }
 
     @Override

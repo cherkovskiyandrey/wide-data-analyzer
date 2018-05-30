@@ -2,6 +2,7 @@ package com.cherkovskiy.vfs.cache;
 
 import com.cherkovskiy.vfs.Attributes;
 import com.cherkovskiy.vfs.DirectoryEntry;
+import com.cherkovskiy.vfs.DirectoryUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.annotation.Nonnull;
@@ -18,7 +19,7 @@ public class CacheDirectoryEntry implements DirectoryEntry {
 
     @Override
     public boolean isDirectory() {
-        return !fileCache.isFile(filePath);
+        return !DirectoryUtils.isFileEntry(filePath);
     }
 
     @Override

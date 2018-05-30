@@ -91,6 +91,9 @@ class ProjectBundle implements ResolvedBundleArtifact {
             throw new IllegalStateException("Enum class could not be service!");
         }
         if (Modifier.isAbstract(cls.getModifiers())) {
+            throw new IllegalStateException("Interface could not be service!");
+        }
+        if (Modifier.isInterface(cls.getModifiers())) {
             throw new IllegalStateException("Abstract class could not be service!");
         }
     }

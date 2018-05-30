@@ -31,11 +31,11 @@ configure(subprojects.findAll { it.group == (rootProject.name + '.bundles') }) {
 }
 
 configure(subprojects.findAll {
-    (it.group as String).matches(rootProject.name.replace('.', "\\.") + "\\.applications.*")
+    (it.group as String).matches(rootProject.name.replace('.', "\\.") + "\\.applications\\..*")
 }) {
     apply plugin: 'application-plugin' // the plugin is mandatory for each bundle
     //Use to debug
-    //logger.log(LogLevel.ERROR, "application-packager applied to: ${it.group}:${it.name}:${it.version}")
+    //logger.log(LogLevel.ERROR, "application-packager applied to: ${it.group}:${it.name}:${it.version};  ->> ${rootProject.name.replace('.', "\\.") + "\\.applications\\..*"}")
 }
 
 apply from: file('dependencies.gradle')

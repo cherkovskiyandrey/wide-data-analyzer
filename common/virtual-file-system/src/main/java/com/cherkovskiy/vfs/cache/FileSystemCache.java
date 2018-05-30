@@ -6,7 +6,6 @@ import com.cherkovskiy.vfs.exceptions.DirectoryException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -17,13 +16,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.SortedMap;
-import java.util.UUID;
+import java.util.*;
 
-import static com.cherkovskiy.vfs.DirectoryUtils.isFile;
-import static com.cherkovskiy.vfs.DirectoryUtils.normalizePath;
+import static com.cherkovskiy.vfs.DirectoryUtils.isFileEntry;
+import static com.cherkovskiy.vfs.DirectoryUtils.normalizeRelativePath;
 
 @NotThreadSafe
 public class FileSystemCache implements FileCache {
@@ -32,9 +28,9 @@ public class FileSystemCache implements FileCache {
 
         @Override
         public int compare(String left, String right) {
-            if (!isFile(left) && isFile(right)) {
+            if (!isFileEntry(left) && isFileEntry(right)) {
                 return -1;
-            } else if (isFile(left) && !isFile(right)) {
+            } else if (isFileEntry(left) && !isFileEntry(right)) {
                 return 1;
             }
             int depth = StringUtils.countMatches(left, "/") - StringUtils.countMatches(right, "/");
@@ -65,16 +61,16 @@ public class FileSystemCache implements FileCache {
 
     @Override
     public boolean contain(String path) {
-        return entryToAttr.containsKey(normalizePath(path, false));
+        return entryToAttr.containsKey(normalizeRelativePath(path, false));
     }
 
     @Override
     public InputStream getAsInputStream(String path) {
-        if (!isFile(path)) {
+        if (!isFileEntry(path)) {
             return null;
         }
         try {
-            return new FileInputStream(mapToUniqueFileInTmpDir(normalizePath(path, true)).toFile());
+            return new FileInputStream(mapToUniqueFileInTmpDir(normalizeRelativePath(path, true)).toFile());
         } catch (IOException e) {
             throw new DirectoryException(e);
         }
@@ -82,14 +78,19 @@ public class FileSystemCache implements FileCache {
 
     @Override
     public void put(String path, InputStream inputStream, Attributes attributes) {
-        path = normalizePath(path, true);
+        path = normalizeRelativePath(path, true);
         if (!contain(path)) {
-            if (isFile(path)) {
+            if (isFileEntry(path)) {
                 try {
                     final Path file = mapToUniqueFileInTmpDir(path);
                     FileUtils.deleteQuietly(file.toFile());
-                    try (final OutputStream out = new FileOutputStream(file.toFile())) {
-                        IOUtils.copy(inputStream, out);
+
+                    if (!Objects.isNull(inputStream)) {
+                        try (final OutputStream out = new FileOutputStream(file.toFile())) {
+                            IOUtils.copy(inputStream, out);
+                        }
+                    } else {
+                        FileUtils.touch(file.toFile());
                     }
                 } catch (IOException e) {
                     throw new DirectoryException(e);
@@ -101,10 +102,10 @@ public class FileSystemCache implements FileCache {
 
     @Override
     public boolean remove(String path, boolean removeEmptyFolders) {
-        path = normalizePath(path, true);
+        path = normalizeRelativePath(path, true);
         boolean result = false;
 
-        if (isFile(path)) {
+        if (isFileEntry(path)) {
             try {
                 final Path file = mapToUniqueFileInTmpDir(path);
                 FileUtils.deleteQuietly(file.toFile());
@@ -135,11 +136,11 @@ public class FileSystemCache implements FileCache {
 
     @Override
     public File getAsFile(String path) {
-        if (!isFile(path)) {
+        if (!isFileEntry(path)) {
             return null;
         }
         try {
-            return mapToUniqueFileInTmpDir(normalizePath(path, true)).toFile();
+            return mapToUniqueFileInTmpDir(normalizeRelativePath(path, true)).toFile();
         } catch (IOException e) {
             throw new DirectoryException(e);
         }
@@ -153,14 +154,14 @@ public class FileSystemCache implements FileCache {
     @Override
     public void normalize() {
         for (String path : Lists.newArrayList(entryToAttr.keySet())) {
-            if (isFile(path)) {
+            if (isFileEntry(path)) {
                 final String parent = findParent(path);
                 if (StringUtils.isNotBlank(parent)) {
                     final Attributes attributes = entryToAttr.get(parent);
                     applyAttributesToParents(path, attributes);
                 } else {
                     final String firstSibling = entryToAttr.firstKey();
-                    if (isFile(firstSibling)) {
+                    if (isFileEntry(firstSibling)) {
                         final Attributes attributes = entryToAttr.get(path);
                         applyAttributesToParents(path, new BaseAttributesImpl(null, attributes.getOwner(), attributes.getGroup()));
                     } else {

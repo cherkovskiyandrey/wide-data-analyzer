@@ -15,7 +15,7 @@ public interface MutableDirectory extends Directory {
      * If directory, input stream is ignored.
      *
      * @param path
-     * @param inputStream
+     * @param inputStream if null and path is file - empty file is created
      * @return DirectoryEntry if entry created successfully or nul if entry already exists.
      * @throws IOException
      */

@@ -127,6 +127,22 @@ public class DependencyHolder implements ResolvedDependency {
         return result.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DependencyHolder holder = (DependencyHolder) o;
+        return Objects.equals(group, holder.group) &&
+                Objects.equals(name, holder.name) &&
+                Objects.equals(version, holder.version);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(group, name, version);
+    }
+
     public static boolean isArchive(File file) {
         return file.getAbsolutePath().endsWith(".jar") || file.getAbsolutePath().endsWith(".war");
     }

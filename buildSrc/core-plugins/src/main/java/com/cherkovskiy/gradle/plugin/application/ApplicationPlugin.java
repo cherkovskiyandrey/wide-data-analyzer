@@ -1,11 +1,15 @@
 package com.cherkovskiy.gradle.plugin.application;
 
+import com.cherkovskiy.gradle.plugin.ProjectEvaluatedListener;
 import com.cherkovskiy.gradle.plugin.api.Dependency;
 import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
 import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
 import com.cherkovskiy.gradle.plugin.api.ResolvedProjectArtifact;
+import com.cherkovskiy.gradle.plugin.bundle.BundlePackagerConfiguration;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePlugin;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
@@ -16,7 +20,6 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.jvm.tasks.Jar;
 
 import javax.annotation.Nonnull;
@@ -28,79 +31,96 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.cherkovskiy.gradle.plugin.Utils.getOrCreateConfig;
+import static com.cherkovskiy.gradle.plugin.bundle.BundlePlugin.ASSEMBLE_BUNDLE_TASK_NAME;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.*;
+import static org.gradle.language.base.plugins.LifecycleBasePlugin.ASSEMBLE_TASK_NAME;
 
 
 public class ApplicationPlugin implements Plugin<Project> {
-
+    public static String ASSEMBLE_APPLICATION_TASK_NAME = "assembleApplication";
     public static final String APP_POSTFIX = "app";
 
     @Override
     public void apply(@Nonnull Project project) {
-        final Task buildTask = project.getTasks().getAt(JavaBasePlugin.BUILD_TASK_NAME);
         OnboardResolver.createConfiguration(project);
 
-        project.apply(Collections.singletonMap("plugin", BundlePlugin.class));
+        final BundlePackagerConfiguration bundlePluginConfig = getOrCreateConfig(project, BundlePackagerConfiguration.NAME, BundlePackagerConfiguration.class);
+        bundlePluginConfig.failIfNotBundle = false;
+        project.apply(ImmutableMap.of("plugin", BundlePlugin.class));
 
-        final ApplicationPackagerConfiguration configuration = project.getExtensions().create(ApplicationPackagerConfiguration.NAME, ApplicationPackagerConfiguration.class);
+        final ApplicationPackagerConfiguration configuration = getOrCreateConfig(project, ApplicationPackagerConfiguration.NAME, ApplicationPackagerConfiguration.class);
+        project.getGradle().addListener((ProjectEvaluatedListener) gradle -> {
 
-        buildTask.doLast(task -> {
+            // Create new task and set in a DAG
+            final Task assembleApplicationTask = project.getTasks().create(ASSEMBLE_APPLICATION_TASK_NAME);
+            assembleApplicationTask.dependsOn(project.getTasks().getAt(ASSEMBLE_BUNDLE_TASK_NAME));
+            project.getTasks().getAt(ASSEMBLE_TASK_NAME).dependsOn(assembleApplicationTask);
 
-            try (final OnboardResolver onboardResolver = new OnboardResolver(project, configuration)) {
-                final Optional<ResolvedBundleArtifact> currentBundle = onboardResolver.getCurrentBundle();
-                final Set<ResolvedBundleArtifact> bundles = onboardResolver.getBundles();
-                ResolvedProjectArtifact applicationStarter = onboardResolver.getApplicationStarter();
-                final Set<ResolvedBundleArtifact> allBundles = Sets.newHashSet(bundles);
-                currentBundle.ifPresent(allBundles::add);
+            assembleApplicationTask.setActions(Collections.singletonList(task -> {
+                try (final OnboardResolver onboardResolver = new OnboardResolver(project, configuration)) {
+                    final Optional<ResolvedBundleArtifact> currentBundle = onboardResolver.getCurrentBundle();
+                    final Set<ResolvedBundleArtifact> bundles = onboardResolver.getBundles();
+                    ResolvedProjectArtifact applicationStarter = onboardResolver.getApplicationStarter();
+                    final Set<ResolvedBundleArtifact> allBundles = Sets.newHashSet(bundles);
+                    currentBundle.ifPresent(allBundles::add);
 
-                if (Objects.isNull(applicationStarter)) {
-                    throw new GradleException(format("Could not declared application starter in %s configuration", OnboardResolver.ONBOARD_CONF_NAME));
-                }
-
-                final boolean isCorrected = checkCommonDependencies(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter если нужно, если его код будет грузиться дефолтным класс лоадером
-
-                if (isCorrected) {
-                    checkImplExternalDependencies(allBundles, configuration.failOnErrors, project.getLogger());
-                }
-                checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter если нужно, если его код будет грузиться дефолтным класс лоадером
-                checkUnprovidedApi(allBundles, applicationStarter.getApi(), configuration.failOnErrors, project.getLogger());
-
-                applicationStarter = StarterPatcher.patch(applicationStarter, task.getTemporaryDir());
-
-                final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
-                final String targetArtifact = Paths.get(jarTask.getDestinationDir().getAbsolutePath(),
-                        jarTask.getArchiveName() + "-" + APP_POSTFIX + "." + configuration.format)
-                        .toFile().getAbsolutePath();
-
-                try (ApplicationPackager applicationPackager = new ApplicationPackager(targetArtifact)) {
-                    final String rootProjectPath = project.getRootProject().absoluteProjectPath(project.getRootProject().getPath());
-                    final File resourcesPath = Paths.get(rootProjectPath, configuration.pathToBinsResources).toFile();
-
-                    applicationPackager.copyResources(resourcesPath, "bin");
-                    applicationPackager.putApplicationStarter(applicationStarter.getFile());
-                    applicationPackager.putApi(getDependenciesBy(allBundles, artifact ->
-                            ImmutableList.<ResolvedDependency>builder().addAll(artifact.getApiExport()).addAll(artifact.getApiImport()).build()));
-
-                    if (currentBundle.isPresent()) {
-                        applicationPackager.putAppBundle(currentBundle.get());
+                    if (Objects.isNull(applicationStarter)) {
+                        throw new GradleException(format("Could not declared application starter in %s configuration", OnboardResolver.ONBOARD_CONF_NAME));
                     }
-                    applicationPackager.putBundles(bundles);
 
-                    applicationPackager.putCommon(applicationStarter.getCommon());
-                    applicationPackager.putCommon(getDependenciesBy(allBundles, ResolvedBundleArtifact::getCommon));
+                    final boolean isCorrected = checkCommonDependencies(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter если нужно, если его код будет грузиться дефолтным класс лоадером
 
-                    applicationPackager.putExternal(applicationStarter.get3rdParty());
-                    applicationPackager.putExternal(getDependenciesBy(allBundles, ResolvedBundleArtifact::getImplExternal));
+                    if (isCorrected) {
+                        checkImplExternalDependencies(allBundles, configuration.failOnErrors, project.getLogger());
+                    }
+                    checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter если нужно, если его код будет грузиться дефолтным класс лоадером
+                    checkUnprovidedApi(allBundles, applicationStarter.getApi(), configuration.failOnErrors, project.getLogger());
 
-                    applicationPackager.putInternal(applicationStarter.getInternal());
-                    applicationPackager.putInternal(getDependenciesBy(allBundles, ResolvedBundleArtifact::getImplInternal));
+                    applicationStarter = StarterPatcher.patch(applicationStarter, task.getTemporaryDir());
 
-                    //TODO: проанализировать нужно ли указывать зависимости стартера в его манифесте + в какой класс лоадер будет грузиться код application context
+                    final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
+
+
+                    //[baseName]-[appendix]-[version]-[classifier]
+                    final String targetArtifact = Paths.get(jarTask.getDestinationDir().getAbsolutePath(),
+                            Joiner.on("-").skipNulls().join(
+                                    StringUtils.defaultIfBlank(jarTask.getBaseName(), null),
+                                    StringUtils.defaultIfBlank(jarTask.getAppendix(), null),
+                                    StringUtils.defaultIfBlank(jarTask.getVersion(), null),
+                                    StringUtils.defaultIfBlank(jarTask.getClassifier(), null),
+                                    APP_POSTFIX
+                            ) + "." + configuration.format)
+                            .toFile().getAbsolutePath();
+
+                    try (ApplicationPackager applicationPackager = new ApplicationPackager(targetArtifact)) {
+                        final String rootProjectPath = project.getRootProject().getRootDir().getAbsolutePath();
+                        final File resourcesPath = Paths.get(rootProjectPath, configuration.pathToBinsResources).toFile();
+
+                        applicationPackager.copyResources(resourcesPath, "bin");
+                        applicationPackager.putApplicationStarter(applicationStarter.getFile());
+                        applicationPackager.putApi(getDependenciesBy(allBundles, artifact ->
+                                ImmutableList.<ResolvedDependency>builder().addAll(artifact.getApiExport()).addAll(artifact.getApiImport()).build()));
+
+                        if (currentBundle.isPresent()) {
+                            applicationPackager.putAppBundle(currentBundle.get());
+                        }
+                        applicationPackager.putBundles(bundles);
+
+                        applicationPackager.putCommon(applicationStarter.getCommon());
+                        applicationPackager.putCommon(getDependenciesBy(allBundles, ResolvedBundleArtifact::getCommon));
+
+                        applicationPackager.putExternal(applicationStarter.get3rdParty());
+                        applicationPackager.putExternal(getDependenciesBy(allBundles, ResolvedBundleArtifact::getImplExternal));
+
+                        applicationPackager.putInternal(applicationStarter.getInternal());
+                        applicationPackager.putInternal(getDependenciesBy(allBundles, ResolvedBundleArtifact::getImplInternal));
+                    }
+                } catch (IOException e) {
+                    throw new GradleException(e.getMessage(), e);
                 }
-            } catch (IOException e) {
-                throw new GradleException(e.getMessage(), e);
-            }
+            }));
         });
     }
 
@@ -208,17 +228,17 @@ public class ApplicationPlugin implements Plugin<Project> {
 
         final List<String> errors = Lists.newArrayList();
         for (ResolvedDependency common : allCommon) {
+
             depImplToBundles.entrySet().stream()
-                    .filter(impl -> ResolvedDependency.COMPARATOR.compare(impl.getKey(), common) == 0)
-                    .findFirst()
-                    .ifPresent(impl -> {
+                    .filter(impl -> Objects.equals(impl.getKey().getName(), common.getName()) &&
+                            Objects.equals(impl.getKey().getGroup(), common.getGroup()) &&
+                            !Objects.equals(impl.getKey().getVersion(), common.getVersion()))
+                    .forEach(impl -> {
                         for (ResolvedBundleArtifact bundle : impl.getValue()) {
-                            if (!Objects.equals(impl.getKey().getVersion(), common.getVersion())) {
-                                errors.add(format("Conflict version between common and impl external dependency in bundle %s. Common %s, impl: %s.",
-                                        bundle.getName(),
-                                        Dependency.toString(common),
-                                        Dependency.toString(impl.getKey())));
-                            }
+                            errors.add(format("Conflict version between common and impl external dependency in bundle %s. Common %s, impl: %s.",
+                                    bundle.getName(),
+                                    Dependency.toString(common),
+                                    Dependency.toString(impl.getKey())));
                         }
                     });
         }

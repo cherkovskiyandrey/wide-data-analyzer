@@ -1,5 +1,6 @@
 package com.cherkovskiy.comprehensive_serializer;
 
+import com.cherkovskiy.application_context.api.annotations.Service;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+@Service
 public class Deserializer {
 
     public static <T extends Serializable> T deserializeFrom(InputStream from, Class<T> token)

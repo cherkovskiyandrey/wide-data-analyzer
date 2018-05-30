@@ -2,6 +2,7 @@ package com.cherkovskiy.gradle.plugin;
 
 import com.cherkovskiy.gradle.plugin.api.Dependency;
 import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -80,7 +81,9 @@ public class ManifestArtifact implements Dependency {
     }
 
     public static Set<ManifestArtifact> fromManifestString(String manifestString) {
+
         return Arrays.stream(manifestString.split(GROUP_SEPARATOR))
+                .filter(StringUtils::isNotBlank)
                 .map(str -> {
                     Matcher matcher = MAVEN_PATTERN.matcher(str);
 

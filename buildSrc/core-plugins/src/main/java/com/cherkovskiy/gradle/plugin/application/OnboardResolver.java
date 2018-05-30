@@ -147,7 +147,9 @@ class OnboardResolver implements Closeable {
 
 
     private boolean isBundle(Dependency dependency) {
-        return SubProjectTypes.BUNDLE.getSubGroupName().equalsIgnoreCase(dependency.getGroup());
+        return Utils.subProjectAgainst(dependency.getGroup(), SubProjectTypes.CORE_PROJECT_GROUP)
+                .map(s -> SubProjectTypes.BUNDLE.getSubGroupName().equalsIgnoreCase(s))
+                .orElse(false);
     }
 
     private boolean isApplicationStarter(Dependency dependency) {

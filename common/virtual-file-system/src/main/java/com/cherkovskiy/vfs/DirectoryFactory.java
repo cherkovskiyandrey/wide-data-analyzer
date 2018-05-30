@@ -1,5 +1,7 @@
 package com.cherkovskiy.vfs;
 
+import com.cherkovskiy.vfs.exceptions.DirectoryException;
+
 public interface DirectoryFactory {
 
     /**
@@ -19,6 +21,7 @@ public interface DirectoryFactory {
      *
      * @param file
      * @param createIfNotExists
+     * @throws DirectoryException if format could not be recognized
      * @return
      */
     MutableDirectory tryDetectAndOpen(String file, boolean createIfNotExists);

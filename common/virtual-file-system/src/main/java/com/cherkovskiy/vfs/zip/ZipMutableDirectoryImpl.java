@@ -1,9 +1,6 @@
 package com.cherkovskiy.vfs.zip;
 
-import com.cherkovskiy.vfs.Attributes;
-import com.cherkovskiy.vfs.BaseArchiveMutableDirectory;
-import com.cherkovskiy.vfs.BaseAttributesImpl;
-import com.cherkovskiy.vfs.MutableDirectory;
+import com.cherkovskiy.vfs.*;
 import com.cherkovskiy.vfs.exceptions.DirectoryException;
 import org.apache.commons.compress.archivers.zip.*;
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +50,7 @@ class ZipMutableDirectoryImpl extends BaseArchiveMutableDirectory implements Mut
                 for (String filePath : fileCache) {
                     final Attributes attributes = fileCache.getAttributes(filePath);
 
-                    if (!fileCache.isFile(filePath)) {
+                    if (!DirectoryUtils.isFileEntry(filePath)) {
                         final ZipArchiveEntry zipArchiveDirEntry = new ZipArchiveEntry(filePath);
                         zipArchiveDirEntry.setMethod(ZipEntry.DEFLATED);
                         if (attributes != null && attributes.getUnixMode() != null) {

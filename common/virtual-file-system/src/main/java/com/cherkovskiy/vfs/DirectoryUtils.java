@@ -18,8 +18,8 @@ import static java.lang.String.format;
 public class DirectoryUtils {
 
     public static void copyRecursive(@Nonnull Directory from, @Nullable String fromDir, @Nonnull MutableDirectory to, @Nullable String toDir) {
-        final String normalizedFromDir = normalizeAsDir(fromDir);
-        final String normalizedToDir = normalizeAsDir(toDir);
+        final String normalizedFromDir = normalizeAsRelativeDir(fromDir);
+        final String normalizedToDir = normalizeAsRelativeDir(toDir);
 
         final Predicate<DirectoryEntry> fromFilter;
         if (StringUtils.isNotBlank(normalizedFromDir)) {
@@ -48,14 +48,14 @@ public class DirectoryUtils {
     }
 
     @Nonnull
-    public static String normalizeAsDir(String dir) {
-        dir = normalizePath(dir, false);
+    public static String normalizeAsRelativeDir(String dir) {
+        dir = normalizeRelativePath(dir, false);
         return StringUtils.isNotBlank(dir) && !dir.endsWith("/") ? dir.concat("/") : dir;
     }
 
 
     @Nonnull
-    public static String normalizePath(String path, boolean throwException) {
+    public static String normalizeRelativePath(String path, boolean throwException) {
         final String result = FilenameUtils.normalize(path, true);
         if (StringUtils.isBlank(result)) {
             if (throwException) {
@@ -70,8 +70,8 @@ public class DirectoryUtils {
         return result;
     }
 
-    public static boolean isFile(@Nonnull String filePath) {
-        final String normalizedName = normalizePath(filePath, false);
+    public static boolean isFileEntry(@Nonnull String filePath) {
+        final String normalizedName = normalizeRelativePath(filePath, false);
         return StringUtils.isNotBlank(normalizedName) && !normalizedName.endsWith("/");
     }
 }

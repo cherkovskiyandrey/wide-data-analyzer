@@ -7,15 +7,6 @@ import java.util.Set;
 public interface ResolvedProjectArtifact extends ResolvedDependency {
 
     @Nonnull
-    String getName();
-
-    @Nonnull
-    String getVersion();
-
-    @Nonnull
-    File getFile();
-
-    @Nonnull
     Set<ResolvedDependency> getApi();
 
     @Nonnull

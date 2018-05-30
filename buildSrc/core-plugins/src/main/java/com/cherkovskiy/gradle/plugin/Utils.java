@@ -6,6 +6,7 @@ import org.gradle.api.Project;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -39,5 +40,13 @@ public class Utils {
                     forbiddenDependencies.stream().map(dependencyHolder -> dependencyHolder.toString()).collect(joining(", "))
             ));
         }
+    }
+
+    public static <T> T getOrCreateConfig(Project project, String name, Class<T> token) {
+        T existed = project.getExtensions().findByType(token);
+        if (Objects.nonNull(existed)) {
+            return existed;
+        }
+        return project.getExtensions().create(name, token);
     }
 }

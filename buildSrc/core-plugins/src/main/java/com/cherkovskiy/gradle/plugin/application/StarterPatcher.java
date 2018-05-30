@@ -27,7 +27,7 @@ public class StarterPatcher {
         Files.copy(applicationStarter.getFile(), patchedJar);
 
         try (JarDirectoryAdapter jarFile = new JarDirectoryAdapter(DirectoryFactory.defaultInstance()
-                .tryDetectAndOpen(applicationStarter.getFile().getAbsolutePath(), false))) {
+                .tryDetectAndOpen(patchedJar.getAbsolutePath(), false))) {
             final Manifest manifest = jarFile.getManifest();
 
             final String classPath = new ClassPathBuilder()
@@ -106,7 +106,7 @@ public class StarterPatcher {
                 stringBuilder.append(",");
             }
             stringBuilder.append(dependencies.stream()
-                    .map(d -> directory + d.getFileName())
+                    .map(d -> directory.getPath() + d.getFileName())
                     .collect(Collectors.joining(",")));
             return this;
         }

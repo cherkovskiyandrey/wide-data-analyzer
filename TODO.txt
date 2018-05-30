@@ -50,7 +50,25 @@
 - implementation project(':applications:application-starter') (+)
 
 
+
+
 - оттестировать работу плагинов (-)
+	* в бандл плагине дать имя таски, взять jar таску текущего бандла, сделать dependsOn от всех jar тасок внутренних проектов от которых он зависет
+		и свою таску сделать doLast после jar таски (+)
+	* убедиться что maven плагин корректно выкладывает артефакт в локал репо (+)
+	* применить похожую схему для остальных плагинов (+)
+	* CommonValidator должен выполнять проверки до бандл всех плагинов (+)
+	* - com/cherkovskiy/gradle/plugin/bundle/BundlePlugin.java:127: .findFirst() //TODO: нужно поискать все зависимости!!!! (+) В ОСТАЛЬНЫХ МЕСТАХ!!!!
+	* неверно патчиться стартер (+)
+	* NullPointer (+)
+	* проверить другие типы упаковки итогого артефакта (+)
+	* все интерфейсы сервисов только private (+)
+	* api export пустой для neural-network-core (+)
+	* неверное имя итового артефакта: C:\Andrey\WORKSPACE\wide-data-analyzer\applications\misc\nn-example\build\libs\nn-example-1.0-SNAPSHOT.jar-app.dir (+)
+	* Bundle must has at least one service. There are not any services in bundle: :applications:misc когда собираешь весь проект (+)
+	* org.gradle.execution.taskpath.ProjectFinderByTaskPath$ProjectLookupException: Project 'assembleApplication' not found in project ':applications:misc:class-loading-test'. (-)
+
+
 
 - описать и начать разработку application-context и application-starter (-)
 

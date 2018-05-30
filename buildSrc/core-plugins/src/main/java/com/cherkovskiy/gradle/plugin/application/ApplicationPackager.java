@@ -59,20 +59,20 @@ class ApplicationPackager implements Closeable {
 
     public void putApplicationStarter(File applicationStarter) throws IOException {
         try (InputStream inputStream = FileUtils.openInputStream(applicationStarter)) {
-            directory.createIfNotExists(ApplicationDirectories.BIN + applicationStarter.getName(), inputStream, null);
+            directory.createIfNotExists(ApplicationDirectories.BIN.getPath() + applicationStarter.getName(), inputStream, null);
         }
     }
 
     public void putAppBundle(ResolvedBundleArtifact artifact) throws IOException {
         try (InputStream inputStream = FileUtils.openInputStream(artifact.getFile())) {
-            directory.createIfNotExists(ApplicationDirectories.APP + artifact.getFile().getName(), inputStream, null);
+            directory.createIfNotExists(ApplicationDirectories.APP.getPath() + artifact.getFile().getName(), inputStream, null);
         }
     }
 
     public void putBundles(Set<ResolvedBundleArtifact> bundles) throws IOException {
         for (ResolvedBundleArtifact bundle : bundles) {
             try (InputStream inputStream = FileUtils.openInputStream(bundle.getFile())) {
-                directory.createIfNotExists(ApplicationDirectories.BUNDLES + bundle.getFile().getName(), inputStream, null);
+                directory.createIfNotExists(ApplicationDirectories.BUNDLES.getPath() + bundle.getFile().getName(), inputStream, null);
             }
         }
     }
