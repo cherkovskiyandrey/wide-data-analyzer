@@ -2,10 +2,12 @@ package com.cherkovskiy.gradle.plugin;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.gradle.plugin.api.ServiceDescriptor;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,7 +51,7 @@ public class ManifestServiceDescriptor implements ServiceDescriptor {
     }
 
     @Nonnull
-    public static String toManifestString(ServiceDescriptor serviceDescriptor) {
+    public static String toManifestString(@Nonnull ServiceDescriptor serviceDescriptor) {
         final StringBuilder stringBuilder = new StringBuilder(1024);
 
         stringBuilder.append(SERVICE_CLASS).append(serviceDescriptor.getServiceClass()).append(",");
@@ -70,8 +72,9 @@ public class ManifestServiceDescriptor implements ServiceDescriptor {
         return stringBuilder.toString();
     }
 
-    public static Set<ServiceDescriptor> fromManifestString(String serviceDescAsStr) {
-        return Arrays.stream(serviceDescAsStr.split(GROUP_SEPARATOR))
+    @Nonnull
+    public static Set<ServiceDescriptor> fromManifestString(@Nullable String serviceDescAsStr) {
+        return StringUtils.isBlank(serviceDescAsStr) ? ImmutableSet.of() : Arrays.stream(serviceDescAsStr.split(GROUP_SEPARATOR))
                 .map(str -> {
                     Matcher matcher = MAVEN_PATTERN.matcher(str);
 

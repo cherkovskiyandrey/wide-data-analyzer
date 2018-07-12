@@ -5,5 +5,7 @@ version '1.0-SNAPSHOT'
 //applicationCfg.format = "tar for class-loading-test"
 
 dependencies {
-    compile "commons-io:commons-io:2.5"
+    implementation "commons-io:commons-io:2.5"
+
+    onboard project(':core:application-starter')
 }

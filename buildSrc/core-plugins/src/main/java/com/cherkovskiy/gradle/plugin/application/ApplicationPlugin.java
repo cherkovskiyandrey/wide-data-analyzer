@@ -100,8 +100,12 @@ public class ApplicationPlugin implements Plugin<Project> {
 
                         applicationPackager.copyResources(resourcesPath, "bin");
                         applicationPackager.putApplicationStarter(applicationStarter.getFile());
+
                         applicationPackager.putApi(getDependenciesBy(allBundles, artifact ->
-                                ImmutableList.<ResolvedDependency>builder().addAll(artifact.getApiExport()).addAll(artifact.getApiImport()).build()));
+                                ImmutableList.<ResolvedDependency>builder()
+                                        .addAll(artifact.getApiExport())
+                                        .addAll(artifact.getApiImport())
+                                        .build()));
 
                         if (currentBundle.isPresent()) {
                             applicationPackager.putAppBundle(currentBundle.get());
