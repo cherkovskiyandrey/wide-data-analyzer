@@ -1,3 +1,7 @@
+
+===================================================================================================
+===================== Задачи из спеки по плагинам сборки ==========================================
+===================================================================================================
 - Пишем градл плагин, который в манифест выкидывает все сервисы которые экспортирует бандл. (+)
 - Реализовать возможность внутри-бандового DI на уровне BundlePackager плагина (+)
 - Подумать и отписать как быть со стандартными интерфейсами типа Runnable - public или private доступ? (+)
@@ -48,11 +52,7 @@
     //this method could not get these dependencies and this class could not invoke checkDependenciesAgainst with this considerate.
 - application-packager: ревизия не реализованных API с предупреждением (+)
 - implementation project(':applications:application-starter') (+)
-
-
-
-
-- оттестировать работу плагинов (-)
+- оттестировать работу плагинов (+)
 	* в бандл плагине дать имя таски, взять jar таску текущего бандла, сделать dependsOn от всех jar тасок внутренних проектов от которых он зависет
 		и свою таску сделать doLast после jar таски (+)
 	* убедиться что maven плагин корректно выкладывает артефакт в локал репо (+)
@@ -66,15 +66,28 @@
 	* api export пустой для neural-network-core (+)
 	* неверное имя итового артефакта: C:\Andrey\WORKSPACE\wide-data-analyzer\applications\misc\nn-example\build\libs\nn-example-1.0-SNAPSHOT.jar-app.dir (+)
 	* Bundle must has at least one service. There are not any services in bundle: :applications:misc когда собираешь весь проект (+)
-	* org.gradle.execution.taskpath.ProjectFinderByTaskPath$ProjectLookupException: Project 'assembleApplication' not found in project ':applications:misc:class-loading-test'. (-)
-
-
-
-- описать и начать разработку application-context и application-starter (-)
+	* org.gradle.execution.taskpath.ProjectFinderByTaskPath$ProjectLookupException: Project 'assembleApplication' not found in project ':applications:misc:class-loading-test'. (+)
 
 - переименовать группу com.cherkovskiy на com.wide_data_analyzer (-)
-
 - Начать разработку plugin-packager плагина (-)
+===================================================================================================
+===================================================================================================
+
+
+===================================================================================================
+===================== Задачи из спеки для application context and loaders =========================
+===================================================================================================
+- описать и начать разработку application-context и application-starter (-)
+	* написать спеку (-)
+
+- просто прогрузить бандлы пока без всяких проверок (-)
+- заложить возможность для каждого приложения или плагина делать init и destroy фазы, нужно например
+	для переопределения пропертей -D: BundleInitializer (-)
+- поддержка @ConfigurationProperties (-)
+
+===================================================================================================
+===================================================================================================
+
 
 - Hello world бандлы написать с различными вариантами DI и возможностью потом объединить их в плагины или в приложение (-)
 
@@ -84,6 +97,5 @@
 - Необходимо предусмотреть DI в рамках самого банда для удобства работы с кодом (-)
 
 - Создать archetype для бандлов и программ через https://github.com/orctom/gradle-archetype-plugin (-)
-
 
 - Описать архитектуру ApplicationContext с поддержкой микросервисной ServiceDiscovery логикой (-)

@@ -1,13 +1,12 @@
 package com.cherkovskiy.neuron_networks.mlp;
 
+import com.cherkovskiy.application_context.api.ServiceLifecycle;
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.application_context.api.annotations.ServiceInject;
 import com.cherkovskiy.comprehensive_serializer.api.SerializerService;
 import com.cherkovskiy.neuron_networks.api.*;
 
 import javax.annotation.Nonnull;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 
 @Service(
@@ -15,7 +14,7 @@ import javax.annotation.PreDestroy;
         lifecycleType = Service.LifecycleType.SINGLETON,
         initType = Service.InitType.EAGER
 )
-public class NeuronNetworkServiceImpl implements NeuronNetworkService {
+public class NeuronNetworkServiceImpl implements NeuronNetworkService, ServiceLifecycle {
 
     //TODO: or me can use like this
     //private final ApplicationContext applicationContext;
@@ -27,14 +26,6 @@ public class NeuronNetworkServiceImpl implements NeuronNetworkService {
 
     public NeuronNetworkServiceImpl(@ServiceInject SerializerService serializerService) {
         this.serializerService = serializerService;
-    }
-
-    @PostConstruct
-    void init() {
-    }
-
-    @PreDestroy
-    void destroy() {
     }
 
     @Nonnull

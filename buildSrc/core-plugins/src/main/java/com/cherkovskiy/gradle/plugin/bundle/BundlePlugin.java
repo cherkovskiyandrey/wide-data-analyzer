@@ -34,7 +34,7 @@ public class BundlePlugin implements Plugin<Project> {
 
         project.getGradle().addListener((ProjectEvaluatedListener) gradle -> {
 
-            //Without init, means don't make configuration depends on tasks from api projects.
+            //Without beforeInit, means don't make configuration depends on tasks from api projects.
             createAndPopulateStuffApiConfig(project);
 
             //To have all ready depended jar before start own jar task

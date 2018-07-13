@@ -1,4 +1,4 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.application_context;
 
 public enum BundleDependencyGroup {
     API_EXPORT("WDA-Bundle-Api-Export-Dependencies", "embedded/api/"),

@@ -1,6 +1,7 @@
 dependencies {
     compile project(':api:api-application-context')
     compile project(':common:virtual-file-system')
+    compile project(':core:application-context-core')
 
     compile dependencyManagement['commons-io:commons-io']
     compile dependencyManagement['org.apache.commons:commons-lang3']

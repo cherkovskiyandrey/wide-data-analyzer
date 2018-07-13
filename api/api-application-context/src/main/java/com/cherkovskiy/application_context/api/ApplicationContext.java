@@ -1,5 +1,6 @@
 package com.cherkovskiy.application_context.api;
 
+import com.cherkovskiy.application_context.api.configuration.ConfigurationContext;
 import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
 
 import javax.annotation.Nonnull;
@@ -18,4 +19,6 @@ public interface ApplicationContext {
 
     @Nonnull
     <T> T getService(@Nonnull Class<T> clsToken, @Nonnull String serviceName, @Nonnull String bundleName, @Nullable BundleVersion bundleVersion) throws ServiceNotFoundException;
+
+    ConfigurationContext getConfigurationContext();
 }

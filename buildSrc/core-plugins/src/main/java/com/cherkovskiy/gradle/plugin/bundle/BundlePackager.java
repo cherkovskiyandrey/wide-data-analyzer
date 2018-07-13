@@ -5,6 +5,7 @@ import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
 import com.cherkovskiy.gradle.plugin.api.ServiceDescriptor;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
+import com.cherkovskiy.application_context.BundleDependencyGroup;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;

@@ -1,12 +1,12 @@
 package com.cherkovskiy.neuron_networks;
 
+import com.cherkovskiy.application_context.ApplicationContextHolder;
+import com.cherkovskiy.application_context.api.ServiceLifecycle;
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.application_context.api.annotations.ServiceInject;
-import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
 import com.cherkovskiy.neuron_networks.api.*;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -16,16 +16,25 @@ import java.util.Arrays;
 
 
 @Service
-public class NNExample {
+public class NNExample implements ServiceLifecycle {
 
     private final NeuronNetworkService neuronNetworkService;
+    private final Configuration configurationExample;
 
     public NNExample(@ServiceInject NeuronNetworkService neuronNetworkService) {
         this.neuronNetworkService = neuronNetworkService;
+        this.configurationExample = ApplicationContextHolder.currentContext().getConfigurationContext().getOrResolve(Configuration.class);
     }
 
-    @PostConstruct
-    void run() throws IOException, ClassNotFoundException, IllegalAccessException, InstantiationException, ServiceNotFoundException {
+    //or
+    public NNExample(@ServiceInject NeuronNetworkService neuronNetworkService,
+                     @ServiceInject Configuration configurationExample) {
+        this.neuronNetworkService = neuronNetworkService;
+        this.configurationExample = configurationExample;
+    }
+
+    @Override
+    public void postConstruct() throws Exception {
         //1. Create empty (random initialised) NN
         final NeuronNetwork neuronNetwork = neuronNetworkService.createFeedforwardBuilder()
 
@@ -130,7 +139,7 @@ public class NNExample {
 
         //3.1 Or load from file.
         final NeuronNetworkDataSet neuronNetworkTrainSetFromFile;
-        try (InputStream inputStream = Files.newInputStream(Paths.get("trainData.td"))) {
+        try (InputStream inputStream = Files.newInputStream(Paths.get(configurationExample.getLogDir().getValueOr(new File(".")).getAbsolutePath(), "trainData.td"))) {
             neuronNetworkTrainSetFromFile = neuronNetworkTrainSetBuilder.useToVerify(0.1f).build(inputStream);
         }
 
@@ -153,6 +162,5 @@ public class NNExample {
             estimation.getResultForVerifyingSet().ifPresent(r -> System.out.println(r.getBestError()));
         }
     }
-
 }
 

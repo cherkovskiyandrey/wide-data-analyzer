@@ -1,0 +1,18 @@
+group 'com.cherkovskiy.core'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+dependencies {
+
+    //------ 3-rd path dependencies
+    implementation dependencyManagement['com.google.guava:guava']
+    implementation dependencyManagement['com.google.code.findbugs:jsr305']
+    implementation dependencyManagement['log4j:log4j']
+    implementation dependencyManagement['org.slf4j:slf4j-log4j12']
+    implementation dependencyManagement['org.slf4j:slf4j-api']
+    implementation dependencyManagement['commons-io:commons-io']
+    implementation dependencyManagement['org.apache.commons:commons-lang3']
+}
