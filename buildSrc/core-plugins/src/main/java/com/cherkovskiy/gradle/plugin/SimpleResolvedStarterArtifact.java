@@ -2,7 +2,7 @@ package com.cherkovskiy.gradle.plugin;
 
 import com.cherkovskiy.gradle.plugin.api.Dependency;
 import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
-import com.cherkovskiy.gradle.plugin.api.ResolvedProjectArtifact;
+import com.cherkovskiy.gradle.plugin.api.ResolvedStarterArtifact;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SimpleResolvedProjectArtifact implements ResolvedProjectArtifact {
+public class SimpleResolvedStarterArtifact implements ResolvedStarterArtifact {
 
     private final String group;
     private final String name;
@@ -21,7 +21,7 @@ public class SimpleResolvedProjectArtifact implements ResolvedProjectArtifact {
     private final File path;
     private final List<DependencyHolder> dependencies;
 
-    public SimpleResolvedProjectArtifact(String group,
+    public SimpleResolvedStarterArtifact(String group,
                                          String name,
                                          String version,
                                          File path,

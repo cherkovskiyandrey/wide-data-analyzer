@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.Set;
 
-public interface ResolvedProjectArtifact extends ResolvedDependency {
+public interface ResolvedStarterArtifact extends ResolvedDependency {
 
     @Nonnull
     Set<ResolvedDependency> getApi();

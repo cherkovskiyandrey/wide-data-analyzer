@@ -1,7 +1,8 @@
 package com.cherkovskiy.gradle.plugin.application;
 
+import com.cherkovskiy.application_context.StarterDependencyGroup;
 import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
-import com.cherkovskiy.gradle.plugin.api.ResolvedProjectArtifact;
+import com.cherkovskiy.gradle.plugin.api.ResolvedStarterArtifact;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
 import com.google.common.io.Files;
@@ -13,14 +14,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Set;
+import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
-import static java.util.jar.Attributes.Name.CLASS_PATH;
-
 public class StarterPatcher {
 
-    public static ResolvedProjectArtifact patch(ResolvedProjectArtifact applicationStarter, File temporaryDir) throws IOException {
+    public static ResolvedStarterArtifact patch(ResolvedStarterArtifact applicationStarter, File temporaryDir) throws IOException {
         final File patchedJar = Paths.get(temporaryDir.getAbsolutePath(), applicationStarter.getFileName()).toFile();
 
         FileUtils.deleteQuietly(patchedJar);
@@ -28,20 +28,17 @@ public class StarterPatcher {
 
         try (JarDirectoryAdapter jarFile = new JarDirectoryAdapter(DirectoryFactory.defaultInstance()
                 .tryDetectAndOpen(patchedJar.getAbsolutePath(), false))) {
-            final Manifest manifest = jarFile.getManifest();
+            final Manifest manifest = jarFile.getManifest() != null ? jarFile.getManifest() : new Manifest();
 
-            final String classPath = new ClassPathBuilder()
-                    .append(applicationStarter.getApi(), ApplicationDirectories.API)
-                    .append(applicationStarter.getCommon(), ApplicationDirectories.LIB_COMMON)
-                    .append(applicationStarter.getInternal(), ApplicationDirectories.LIB_INTERNAL)
-                    .append(applicationStarter.get3rdParty(), ApplicationDirectories.LIB)
-                    .build();
+            addToManifest(StarterDependencyGroup.API, applicationStarter.getApi(), manifest);
+            addToManifest(StarterDependencyGroup.COMMON, applicationStarter.getCommon(), manifest);
+            addToManifest(StarterDependencyGroup.INTERNAL, applicationStarter.getInternal(), manifest);
+            addToManifest(StarterDependencyGroup.EXTERNAL_3RD_PARTY, applicationStarter.get3rdParty(), manifest);
 
-            manifest.getMainAttributes().put(CLASS_PATH, classPath);
             jarFile.setManifest(manifest);
         }
 
-        return new ResolvedProjectArtifact() {
+        return new ResolvedStarterArtifact() {
             @Nonnull
             @Override
             public String getGroup() {
@@ -98,21 +95,12 @@ public class StarterPatcher {
         };
     }
 
-    private static class ClassPathBuilder {
-        private final StringBuilder stringBuilder = new StringBuilder(1024);
-
-        ClassPathBuilder append(Set<ResolvedDependency> dependencies, ApplicationDirectories directory) {
-            if (!stringBuilder.toString().isEmpty() && !dependencies.isEmpty()) {
-                stringBuilder.append(",");
-            }
-            stringBuilder.append(dependencies.stream()
-                    .map(d -> directory.getPath() + d.getFileName())
-                    .collect(Collectors.joining(",")));
-            return this;
-        }
-
-        public String build() {
-            return stringBuilder.toString();
-        }
+    private static void addToManifest(@Nonnull StarterDependencyGroup group, @Nonnull Set<ResolvedDependency> dependencies, @Nonnull Manifest manifest) {
+        manifest.getMainAttributes().put(
+                new Attributes.Name(group.getAttributeName()),
+                dependencies.stream()
+                        .map(d -> group.getPath().getPath() + d.getFileName())
+                        .collect(Collectors.joining(","))
+        );
     }
 }

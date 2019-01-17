@@ -4,7 +4,7 @@ import com.cherkovskiy.gradle.plugin.ProjectEvaluatedListener;
 import com.cherkovskiy.gradle.plugin.api.Dependency;
 import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
 import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
-import com.cherkovskiy.gradle.plugin.api.ResolvedProjectArtifact;
+import com.cherkovskiy.gradle.plugin.api.ResolvedStarterArtifact;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePackagerConfiguration;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePlugin;
 import com.google.common.base.Joiner;
@@ -62,7 +62,7 @@ public class ApplicationPlugin implements Plugin<Project> {
                 try (final OnboardResolver onboardResolver = new OnboardResolver(project, configuration)) {
                     final Optional<ResolvedBundleArtifact> currentBundle = onboardResolver.getCurrentBundle();
                     final Set<ResolvedBundleArtifact> bundles = onboardResolver.getBundles();
-                    ResolvedProjectArtifact applicationStarter = onboardResolver.getApplicationStarter();
+                    ResolvedStarterArtifact applicationStarter = onboardResolver.getApplicationStarter();
                     final Set<ResolvedBundleArtifact> allBundles = Sets.newHashSet(bundles);
                     currentBundle.ifPresent(allBundles::add);
 

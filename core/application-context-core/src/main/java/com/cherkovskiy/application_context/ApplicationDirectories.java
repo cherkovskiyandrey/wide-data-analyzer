@@ -1,4 +1,4 @@
-package com.cherkovskiy.gradle.plugin.application;
+package com.cherkovskiy.application_context;
 
 public enum ApplicationDirectories {
     API("api_core/"),

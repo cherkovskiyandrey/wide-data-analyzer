@@ -3,7 +3,7 @@ package com.cherkovskiy.gradle.plugin.application;
 import com.cherkovskiy.gradle.plugin.*;
 import com.cherkovskiy.gradle.plugin.api.BundleResolver;
 import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
-import com.cherkovskiy.gradle.plugin.api.ResolvedProjectArtifact;
+import com.cherkovskiy.gradle.plugin.api.ResolvedStarterArtifact;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -33,7 +33,7 @@ class OnboardResolver implements Closeable {
     private final Project project;
     private final ApplicationPackagerConfiguration configuration;
     private final File baseTmpDir;
-    private final ResolvedProjectArtifact applicationStarter;
+    private final ResolvedStarterArtifact applicationStarter;
     private final ResolvedBundleArtifact currentBundle;
     private final Set<ResolvedBundleArtifact> bundles;
 
@@ -44,14 +44,14 @@ class OnboardResolver implements Closeable {
         FileUtils.forceDeleteOnExit(this.baseTmpDir);
 
         this.bundles = Sets.newTreeSet(ResolvedBundleArtifact.COMPARATOR);
-        ResolvedProjectArtifact applicationStarter = null;
+        ResolvedStarterArtifact applicationStarter = null;
         for (Dependency dependency : project.getConfigurations().getByName(ONBOARD_CONF_NAME).getDependencies()) {
             if (dependency instanceof ProjectDependency) {
                 final Project depProject = ((ProjectDependency) dependency).getDependencyProject();
                 if (isBundle(dependency)) {
                     this.bundles.add(getBundleFromProject(depProject));
                 } else if (isApplicationStarter(dependency)) {
-                    applicationStarter = getResolvedArtifactFormProject(depProject);
+                    applicationStarter = getResolvedStarterArtifactFormProject(depProject);
                 } else {
                     throw new GradleException(format("Unsupported using in \"%s\" not a bundle or application-starter dependencies: %s",
                             ONBOARD_CONF_NAME, dependency.toString()));
@@ -60,7 +60,7 @@ class OnboardResolver implements Closeable {
                 if (isBundle(dependency)) {
                     this.bundles.add(getBundleFromArtifact(dependency));
                 } else if (isApplicationStarter(dependency)) {
-                    applicationStarter = getResolvedArtifactAsDependency(dependency);
+                    applicationStarter = getResolvedStarterArtifactAsDependency(dependency);
                 } else {
                     throw new GradleException(format("Unsupported using in \"%s\" not a bundle or application-starter dependencies: %s",
                             ONBOARD_CONF_NAME, dependency.toString()));
@@ -92,12 +92,12 @@ class OnboardResolver implements Closeable {
     }
 
 
-    private ResolvedProjectArtifact getResolvedArtifactFormProject(Project starter) {
+    private ResolvedStarterArtifact getResolvedStarterArtifactFormProject(Project starter) {
         final DependencyScanner dependencyScanner = new DependencyScanner(starter);
         final List<DependencyHolder> dependencies = dependencyScanner.getRuntimeDependencies();
         final Jar jarTask = starter.getTasks().withType(Jar.class).iterator().next();
 
-        return new SimpleResolvedProjectArtifact(
+        return new SimpleResolvedStarterArtifact(
                 starter.getGroup().toString(),
                 starter.getName(),
                 starter.getVersion().toString(),
@@ -130,7 +130,7 @@ class OnboardResolver implements Closeable {
     }
 
 
-    private ResolvedProjectArtifact getResolvedArtifactAsDependency(Dependency starter) {
+    private ResolvedStarterArtifact getResolvedStarterArtifactAsDependency(Dependency starter) {
         final DependencyScanner dependencyScanner = new DependencyScanner(project);
         final List<DependencyHolder> dependencies = dependencyScanner.resolveDetachedOn(null, starter);
         final DependencyHolder root = dependencies.stream()
@@ -142,7 +142,7 @@ class OnboardResolver implements Closeable {
                         starter.getGroup(), starter.getName(), starter.getVersion())));
         dependencies.remove(root);
 
-        return new SimpleResolvedProjectArtifact(
+        return new SimpleResolvedStarterArtifact(
                 root.getGroup(),
                 root.getName(),
                 root.getVersion(),
@@ -177,7 +177,7 @@ class OnboardResolver implements Closeable {
         return Optional.ofNullable(currentBundle);
     }
 
-    public ResolvedProjectArtifact getApplicationStarter() {
+    public ResolvedStarterArtifact getApplicationStarter() {
         return applicationStarter;
     }
 }
