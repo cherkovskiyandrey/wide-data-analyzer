@@ -6,9 +6,12 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.ResolvedDependency;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,19 +31,12 @@ public class DependencyScanner {
     }
 
     @SuppressWarnings("unchecked")
+    @Nonnull
     public List<DependencyHolder> getManagementedDependencies() {
-        final List<DependencyHolder> dependencies = Lists.newArrayList();
-
-        for (ResolvedDependency resolvedDependency : project.getConfigurations()
-                .detachedConfiguration(
-                        ((Map<String, Dependency>) project.getProperties().get("dependencyManagement")).values().toArray(new Dependency[]{}))
-                .getResolvedConfiguration()
-                .getFirstLevelModuleDependencies()) {
-
-            walkDependency(resolvedDependency, dependencies, ConfigurationTypes.IMPLEMENTATION, null);
-        }
-
-        return dependencies;
+        return resolveDetachedOn(
+                ConfigurationTypes.IMPLEMENTATION,
+                ((Map<String, Dependency>) project.getProperties().get("dependencyManagement")).values().toArray(new Dependency[]{})
+        );
     }
 
     public List<DependencyHolder> getResolvedDependenciesByType(ConfigurationTypes confType) {
@@ -93,14 +89,20 @@ public class DependencyScanner {
                 .collect(Collectors.toList());
     }
 
-    public static List<DependencyHolder> resolveDetachedOn(Project project, Dependency... dependency) {
+    @Nonnull
+    public List<DependencyHolder> resolveDetachedOn(@Nullable ConfigurationTypes configurationTypes, @Nonnull Dependency... dependency) {
         final List<DependencyHolder> dependencies = Lists.newArrayList();
         for (ResolvedDependency resolvedDependency : project.getConfigurations()
                 .detachedConfiguration(dependency)
                 .getResolvedConfiguration()
                 .getFirstLevelModuleDependencies()) {
 
-            walkDependency(resolvedDependency, dependencies, ConfigurationTypes.UNKNOWN, null);
+            walkDependency(
+                    resolvedDependency,
+                    dependencies,
+                    Optional.ofNullable(configurationTypes).orElse(ConfigurationTypes.UNKNOWN),
+                    null
+            );
         }
 
         return dependencies;

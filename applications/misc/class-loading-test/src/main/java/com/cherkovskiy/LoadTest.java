@@ -10,6 +10,9 @@ import java.util.Map;
 public class LoadTest {
 
 
+    /**
+     *  Убеждаемся что интерфейс класса/другие используемые в классе классы будут грузится через тот же класс лоадер
+     */
     public static void main(String[] args) throws IOException, ClassNotFoundException, IllegalAccessException, InstantiationException {
 
         String nameOfA = A.class.getName();

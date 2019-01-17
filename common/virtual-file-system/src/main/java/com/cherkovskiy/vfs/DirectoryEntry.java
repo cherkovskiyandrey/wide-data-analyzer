@@ -7,7 +7,7 @@ import java.io.InputStream;
 public interface DirectoryEntry {
 
     /**
-     * @return true for directory entry and fals for regular file
+     * @return true for directory entry and false for regular file
      */
     boolean isDirectory();
 

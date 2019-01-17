@@ -6,7 +6,7 @@ import com.cherkovskiy.application_context.api.BundleVersion;
 import javax.annotation.Nonnull;
 
 
-//TODO: подумать нужна ли такая инициализация.....
+//TODO: реализовать пусть лучше будет
 public class NNExampleBundleInitializer implements BundleLifecycle {
 
     @Override

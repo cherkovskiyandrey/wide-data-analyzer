@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.cherkovskiy.gradle.plugin.ConfigurationTypes.*;
+import static com.cherkovskiy.gradle.plugin.ConfigurationTypes.API;
+import static com.cherkovskiy.gradle.plugin.ConfigurationTypes.RUNTIME_CLASSPATH;
 import static com.cherkovskiy.gradle.plugin.Utils.getOrCreateConfig;
-import static com.cherkovskiy.gradle.plugin.Utils.subProjectAgainst;
 import static java.lang.String.format;
 import static org.gradle.api.plugins.JavaPlugin.JAR_TASK_NAME;
 import static org.gradle.language.base.plugins.LifecycleBasePlugin.ASSEMBLE_TASK_NAME;
@@ -34,9 +34,6 @@ public class BundlePlugin implements Plugin<Project> {
 
         project.getGradle().addListener((ProjectEvaluatedListener) gradle -> {
 
-            //Without beforeInit, means don't make configuration depends on tasks from api projects.
-            createAndPopulateStuffApiConfig(project);
-
             //To have all ready depended jar before start own jar task
             project.getTasks().getAt(JAR_TASK_NAME).dependsOn(project.getConfigurations()
                     .getByName(RUNTIME_CLASSPATH.getGradleString()).getTaskDependencyFromProjectDependency(true, JAR_TASK_NAME));
@@ -51,18 +48,21 @@ public class BundlePlugin implements Plugin<Project> {
 
                 final DependencyScanner dependencyScanner = new DependencyScanner(project);
                 final List<DependencyHolder> runtimeConfDependencies = dependencyScanner.getRuntimeDependencies();
-                final List<DependencyHolder> allApiDependencies = dependencyScanner.getResolvedDependenciesByType(STUFF_ALL_API);
+                final List<DependencyHolder> allResolvedApiDependencies = dependencyScanner.resolveDetachedOn(null, Utils.getAllApiSubProjects(project));
 
                 Utils.checkImportProjectsRestrictions(project, runtimeConfDependencies, ALLOWED_TO_DEPENDS_ON_LIST);
-                checkDependenciesAgainst(project, runtimeConfDependencies, allApiDependencies);
+                checkDependenciesAgainst(project, runtimeConfDependencies, allResolvedApiDependencies);
 
                 final List<DependencyHolder> apiConfDependencies = dependencyScanner.getDependenciesByType(API);
-                final ProjectBundle bundleArtifact = new ProjectBundle(jarTask.getArchivePath(),
+                final ProjectBundle bundleArtifact = new ProjectBundle(
+                        jarTask.getArchivePath(),
                         jarTask.getBaseName(),
                         jarTask.getVersion(),
                         configuration.embeddedDependencies,
                         runtimeConfDependencies,
-                        apiConfDependencies);
+                        apiConfDependencies,
+                        allResolvedApiDependencies
+                );
 
                 if (configuration.failIfNotBundle && bundleArtifact.getServices().isEmpty()) {
                     throw new GradleException(format("Bundle must has at least one service. There are not any services in bundle: %s",
@@ -84,17 +84,6 @@ public class BundlePlugin implements Plugin<Project> {
                 }
             }));
         });
-    }
-
-    private void createAndPopulateStuffApiConfig(Project project) {
-        final String rootGroupName = Utils.lookUpRootGroupName(project);
-        project.getConfigurations().create(STUFF_ALL_API.getGradleString(), conf -> conf.getDependencies().addAll(
-                project.getRootProject().getSubprojects().stream()
-                        .filter(sp -> subProjectAgainst(sp.getGroup().toString(), rootGroupName)
-                                .map(sg -> SubProjectTypes.API.getSubGroupName().equalsIgnoreCase(sg))
-                                .orElse(false))
-                        .map(project.getDependencies()::create)
-                        .collect(Collectors.toSet())));
     }
 
     private void checkDependenciesAgainst(Project project, List<DependencyHolder> dependencies, List<DependencyHolder> allApiDependencies) {

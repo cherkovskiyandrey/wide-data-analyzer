@@ -43,7 +43,7 @@ public class ServicesClassLoader extends URLClassLoader {
         while (true) {
             try {
                 //unfortunately only this approach is worked or custom parser
-                // I not use resourceUrl.toString().contain(knownUrl.toString()) because:
+                // I didn't use resourceUrl.toString().contain(knownUrl.toString()) because:
                 // -->> /usr/gradle/caches/modules-2/files-2/
                 // -->> jar:file:/usr/gradle/usr/gradle/caches/modules-2/files-2/api-neural-network-1.0-SNAPSHOT.jar!/com/cherkovskiy/neuron_networks/api/NeuronNetworkService.class
                 url = new URL(url.getFile());

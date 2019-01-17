@@ -70,14 +70,20 @@ public class ApplicationPlugin implements Plugin<Project> {
                         throw new GradleException(format("Could not declared application starter in %s configuration", OnboardResolver.ONBOARD_CONF_NAME));
                     }
 
-                    final boolean isCorrected = checkCommonDependencies(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter если нужно, если его код будет грузиться дефолтным класс лоадером
+                    final boolean isCorrected = checkCommonDependencies(allBundles, configuration.failOnErrors, project.getLogger());
 
                     if (isCorrected) {
                         checkImplExternalDependencies(allBundles, configuration.failOnErrors, project.getLogger());
                     }
-                    checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger()); //TODO: проверить и апи из applicationStarter если нужно, если его код будет грузиться дефолтным класс лоадером
-                    checkUnprovidedApi(allBundles, applicationStarter.getApi(), configuration.failOnErrors, project.getLogger());
+                    checkApiVersions(allBundles, configuration.failOnErrors, project.getLogger());
 
+                    //TODO: логика обработки remote services см. пункт 4.2 спеки
+                    //--------------
+                    checkUnprovidedApi(allBundles, applicationStarter.getApi(), configuration.failOnErrors, project.getLogger());
+                    //--------------
+
+                    //TODO: не нужно сваливать их в общую свалку, т.к. например lib/wda/application-context-1.0-SNAPSHOT.jar в boostrap класслоадере совсем НЕ нужен!
+                    // туда нужно сложить только api + common
                     applicationStarter = StarterPatcher.patch(applicationStarter, task.getTemporaryDir());
 
                     final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();

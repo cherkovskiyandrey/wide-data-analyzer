@@ -3,6 +3,7 @@ package com.cherkovskiy.gradle.plugin;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Dependency;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -48,5 +49,15 @@ public class Utils {
             return existed;
         }
         return project.getExtensions().create(name, token);
+    }
+
+    public static Dependency[] getAllApiSubProjects(Project project) {
+        final String rootGroupName = Utils.lookUpRootGroupName(project);
+        return project.getRootProject().getSubprojects().stream()
+                .filter(sp -> subProjectAgainst(sp.getGroup().toString(), rootGroupName)
+                        .map(sg -> SubProjectTypes.API.getSubGroupName().equalsIgnoreCase(sg))
+                        .orElse(false))
+                .map(project.getDependencies()::create)
+                .toArray(Dependency[]::new);
     }
 }

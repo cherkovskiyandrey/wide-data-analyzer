@@ -22,6 +22,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -36,20 +37,23 @@ class ProjectBundle implements ResolvedBundleArtifact {
     private final boolean embeddedDependencies;
     private final List<DependencyHolder> runtimeConfDependencies;
     private final List<DependencyHolder> apiConfDependencies;
+    private final List<DependencyHolder> allApiDependencies;
     private final Set<ServiceDescriptor> services;
 
-    ProjectBundle(File archivePath,
-                         String name,
-                         String version,
-                         boolean embeddedDependencies,
-                         List<DependencyHolder> runtimeConfDependencies,
-                         List<DependencyHolder> apiConfDependencies) {
+    ProjectBundle(@Nonnull File archivePath,
+                  @Nonnull String name,
+                  @Nonnull String version,
+                  boolean embeddedDependencies,
+                  @Nonnull List<DependencyHolder> runtimeConfDependencies,
+                  @Nonnull List<DependencyHolder> apiConfDependencies,
+                  @Nonnull List<DependencyHolder> allApiDependencies) {
         this.archivePath = archivePath;
         this.name = name;
         this.version = version;
         this.embeddedDependencies = embeddedDependencies;
         this.runtimeConfDependencies = runtimeConfDependencies;
         this.apiConfDependencies = apiConfDependencies;
+        this.allApiDependencies = allApiDependencies;
         this.services = servicesLookUp();
     }
 
@@ -91,10 +95,10 @@ class ProjectBundle implements ResolvedBundleArtifact {
             throw new IllegalStateException("Enum class could not be service!");
         }
         if (Modifier.isAbstract(cls.getModifiers())) {
-            throw new IllegalStateException("Interface could not be service!");
+            throw new IllegalStateException("Abstract class could not be service!");
         }
         if (Modifier.isInterface(cls.getModifiers())) {
-            throw new IllegalStateException("Abstract class could not be service!");
+            throw new IllegalStateException("Interface could not be service!");
         }
     }
 
@@ -209,21 +213,12 @@ class ProjectBundle implements ResolvedBundleArtifact {
                 .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
-    //TODO: точно ли будет работать, учитывая схлопывания????
     @Nonnull
     @Override
     public Set<ResolvedDependency> getCommon() {
         return runtimeConfDependencies.stream()
-                .filter(dep -> {
-                    if (!dep.isNative()) {
-                        for (; dep != null; dep = dep.getParent().orElse(null)) {
-                            if (dep.isNative() && SubProjectTypes.API == dep.getSubProjectType()) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                })
+                .filter(((Predicate<? super DependencyHolder>) DependencyHolder::isNative).negate())
+                .filter(allApiDependencies::contains)
                 .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
