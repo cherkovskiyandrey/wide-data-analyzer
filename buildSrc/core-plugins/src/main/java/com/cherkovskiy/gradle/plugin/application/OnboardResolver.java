@@ -95,7 +95,6 @@ class OnboardResolver implements Closeable {
     private ResolvedProjectArtifact getResolvedArtifactFormProject(Project starter) {
         final DependencyScanner dependencyScanner = new DependencyScanner(starter);
         final List<DependencyHolder> dependencies = dependencyScanner.getRuntimeDependencies();
-        final List<DependencyHolder> allResolvedApiDependencies = dependencyScanner.resolveDetachedOn(null, Utils.getAllApiSubProjects(project));
         final Jar jarTask = starter.getTasks().withType(Jar.class).iterator().next();
 
         return new SimpleResolvedProjectArtifact(
@@ -103,8 +102,7 @@ class OnboardResolver implements Closeable {
                 starter.getName(),
                 starter.getVersion().toString(),
                 jarTask.getArchivePath(),
-                dependencies,
-                allResolvedApiDependencies
+                dependencies
         );
     }
 
@@ -135,7 +133,6 @@ class OnboardResolver implements Closeable {
     private ResolvedProjectArtifact getResolvedArtifactAsDependency(Dependency starter) {
         final DependencyScanner dependencyScanner = new DependencyScanner(project);
         final List<DependencyHolder> dependencies = dependencyScanner.resolveDetachedOn(null, starter);
-        final List<DependencyHolder> allResolvedApiDependencies = dependencyScanner.resolveDetachedOn(null, Utils.getAllApiSubProjects(project));
         final DependencyHolder root = dependencies.stream()
                 .filter(dh -> Objects.equals(dh.getGroup(), starter.getGroup()) &&
                         Objects.equals(dh.getName(), starter.getName()) &&
@@ -145,15 +142,12 @@ class OnboardResolver implements Closeable {
                         starter.getGroup(), starter.getName(), starter.getVersion())));
         dependencies.remove(root);
 
-        //TODO: нужно взять из dependencies все API и получить для них все коммон и добавить их к allResolvedApiDependencies
-
         return new SimpleResolvedProjectArtifact(
                 root.getGroup(),
                 root.getName(),
                 root.getVersion(),
                 root.getFile(),
-                dependencies,
-                allResolvedApiDependencies
+                dependencies
         );
     }
 

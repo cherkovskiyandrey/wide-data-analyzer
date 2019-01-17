@@ -37,7 +37,6 @@ class ProjectBundle implements ResolvedBundleArtifact {
     private final boolean embeddedDependencies;
     private final List<DependencyHolder> runtimeConfDependencies;
     private final List<DependencyHolder> apiConfDependencies;
-    private final List<DependencyHolder> allApiDependencies;
     private final Set<ServiceDescriptor> services;
 
     ProjectBundle(@Nonnull File archivePath,
@@ -45,15 +44,13 @@ class ProjectBundle implements ResolvedBundleArtifact {
                   @Nonnull String version,
                   boolean embeddedDependencies,
                   @Nonnull List<DependencyHolder> runtimeConfDependencies,
-                  @Nonnull List<DependencyHolder> apiConfDependencies,
-                  @Nonnull List<DependencyHolder> allApiDependencies) {
+                  @Nonnull List<DependencyHolder> apiConfDependencies) {
         this.archivePath = archivePath;
         this.name = name;
         this.version = version;
         this.embeddedDependencies = embeddedDependencies;
         this.runtimeConfDependencies = runtimeConfDependencies;
         this.apiConfDependencies = apiConfDependencies;
-        this.allApiDependencies = allApiDependencies;
         this.services = servicesLookUp();
     }
 
@@ -217,8 +214,16 @@ class ProjectBundle implements ResolvedBundleArtifact {
     @Override
     public Set<ResolvedDependency> getCommon() {
         return runtimeConfDependencies.stream()
-                .filter(((Predicate<? super DependencyHolder>) DependencyHolder::isNative).negate())
-                .filter(allApiDependencies::contains)
+                .filter(dep -> {
+                    if (!dep.isNative()) {
+                        for (; dep != null; dep = dep.getParent().orElse(null)) {
+                            if (dep.isNative() && SubProjectTypes.API == dep.getSubProjectType()) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                })
                 .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 

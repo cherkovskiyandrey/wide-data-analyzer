@@ -60,9 +60,7 @@ public class BundlePlugin implements Plugin<Project> {
                         jarTask.getVersion(),
                         configuration.embeddedDependencies,
                         runtimeConfDependencies,
-                        apiConfDependencies,
-                        allResolvedApiDependencies
-                );
+                        apiConfDependencies);
 
                 if (configuration.failIfNotBundle && bundleArtifact.getServices().isEmpty()) {
                     throw new GradleException(format("Bundle must has at least one service. There are not any services in bundle: %s",

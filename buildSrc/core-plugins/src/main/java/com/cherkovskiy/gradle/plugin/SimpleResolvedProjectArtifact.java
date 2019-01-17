@@ -11,7 +11,6 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class SimpleResolvedProjectArtifact implements ResolvedProjectArtifact {
@@ -21,20 +20,17 @@ public class SimpleResolvedProjectArtifact implements ResolvedProjectArtifact {
     private final String version;
     private final File path;
     private final List<DependencyHolder> dependencies;
-    private final List<DependencyHolder> allResolvedApiDependencies;
 
-    public SimpleResolvedProjectArtifact(@Nonnull String group,
-                                         @Nonnull String name,
-                                         @Nonnull String version,
-                                         @Nonnull File path,
-                                         @Nonnull List<DependencyHolder> dependencies,
-                                         @Nonnull List<DependencyHolder> allResolvedApiDependencies) {
+    public SimpleResolvedProjectArtifact(String group,
+                                         String name,
+                                         String version,
+                                         File path,
+                                         List<DependencyHolder> dependencies) {
         this.group = group;
         this.name = name;
         this.version = version;
         this.path = path;
         this.dependencies = Lists.newArrayList(dependencies);
-        this.allResolvedApiDependencies = allResolvedApiDependencies;
     }
 
     @Nonnull
@@ -79,8 +75,16 @@ public class SimpleResolvedProjectArtifact implements ResolvedProjectArtifact {
     @Override
     public Set<ResolvedDependency> getCommon() {
         return dependencies.stream()
-                .filter(((Predicate<? super DependencyHolder>) DependencyHolder::isNative).negate())
-                .filter(allResolvedApiDependencies::contains)
+                .filter(dep -> {
+                    if (!dep.isNative()) {
+                        for (; dep != null; dep = dep.getParent().orElse(null)) {
+                            if (dep.isNative() && SubProjectTypes.API == dep.getSubProjectType()) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                })
                 .collect(Collectors.toCollection(() -> Sets.newTreeSet(Dependency.COMPARATOR)));
     }
 
