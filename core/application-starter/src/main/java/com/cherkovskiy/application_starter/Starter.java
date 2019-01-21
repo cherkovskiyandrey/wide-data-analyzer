@@ -1,11 +1,19 @@
 package com.cherkovskiy.application_starter;
 
-import com.cherkovskiy.application_context.api.ContextBuilder;
 import com.cherkovskiy.application_context.MonolithicApplicationContextBuilder;
+import com.cherkovskiy.application_context.api.ContextBuilder;
 
-public class Starter {
+import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
-    public static void main(String[] args) {
+public class Starter implements Consumer<String[]> {
+
+    @Override
+    public void accept(String[] args) {
+        startApplication(args);
+    }
+
+    private void startApplication(@Nonnull String[] args) {
         final ContextBuilder contextBuilder = new MonolithicApplicationContextBuilder();
 
         contextBuilder

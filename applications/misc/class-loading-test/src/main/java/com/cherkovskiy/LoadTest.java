@@ -50,7 +50,6 @@ public class LoadTest {
 
         Object o = cls.newInstance();
 
-
         System.out.println("---");
     }
 

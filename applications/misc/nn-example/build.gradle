@@ -7,7 +7,7 @@ repositories {
     mavenLocal()
 }
 
-applicationCfg.format = 'zip'
+//applicationCfg.format = 'zip'
 applicationCfg.failOnErrors = false
 
 dependencies {

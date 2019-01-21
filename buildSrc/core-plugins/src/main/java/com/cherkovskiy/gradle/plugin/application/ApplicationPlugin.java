@@ -82,12 +82,8 @@ public class ApplicationPlugin implements Plugin<Project> {
                     checkUnprovidedApi(allBundles, applicationStarter.getApi(), configuration.failOnErrors, project.getLogger());
                     //--------------
 
-                    //TODO: не нужно сваливать их в общую свалку, т.к. например lib/wda/application-context-1.0-SNAPSHOT.jar в boostrap класслоадере совсем НЕ нужен!
-                    // туда нужно сложить только api + common
                     applicationStarter = StarterPatcher.patch(applicationStarter, task.getTemporaryDir());
-
                     final Jar jarTask = project.getTasks().withType(Jar.class).iterator().next();
-
 
                     //[baseName]-[appendix]-[version]-[classifier]
                     final String targetArtifact = Paths.get(jarTask.getDestinationDir().getAbsolutePath(),

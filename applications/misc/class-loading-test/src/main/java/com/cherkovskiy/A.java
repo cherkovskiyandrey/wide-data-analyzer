@@ -1,6 +1,6 @@
 package com.cherkovskiy;
 
-public class A extends B{
+public class A extends B {
 
 //    private final B b = new B();
 //
