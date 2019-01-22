@@ -4,9 +4,9 @@ import com.cherkovskiy.application_context.ApplicationContextHolder;
 import com.cherkovskiy.application_context.api.ServiceLifecycle;
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.application_context.api.annotations.ServiceInject;
+import com.cherkovskiy.application_context.api.configuration.ConfigurationInject;
 import com.cherkovskiy.neuron_networks.api.*;
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -28,7 +28,7 @@ public class NNExample implements ServiceLifecycle {
 
     //or
     public NNExample(@ServiceInject NeuronNetworkService neuronNetworkService,
-                     @ServiceInject Configuration configurationExample) {
+                     @ConfigurationInject Configuration configurationExample) {
         this.neuronNetworkService = neuronNetworkService;
         this.configurationExample = configurationExample;
     }
@@ -139,7 +139,7 @@ public class NNExample implements ServiceLifecycle {
 
         //3.1 Or load from file.
         final NeuronNetworkDataSet neuronNetworkTrainSetFromFile;
-        try (InputStream inputStream = Files.newInputStream(Paths.get(configurationExample.getLogDir().getValueOr(new File(".")).getAbsolutePath(), "trainData.td"))) {
+        try (InputStream inputStream = Files.newInputStream(Paths.get(configurationExample.getLogDir().getAbsolutePath(), "trainData.td"))) {
             neuronNetworkTrainSetFromFile = neuronNetworkTrainSetBuilder.useToVerify(0.1f).build(inputStream);
         }
 

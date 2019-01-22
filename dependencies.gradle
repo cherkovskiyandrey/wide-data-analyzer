@@ -18,4 +18,5 @@ ext.dependencyManagement = [
         'commons-io:commons-io'              : dependencies.create('commons-io:commons-io:2.5'),
         'org.apache.commons:commons-lang3'   : dependencies.create('org.apache.commons:commons-lang3:3.7'),
         'org.apache.commons:commons-compress': dependencies.create('org.apache.commons:commons-compress:1.15'),
+        'javax.validation:validation-api'    : dependencies.create('javax.validation:validation-api:2.0.1.Final')
 ]

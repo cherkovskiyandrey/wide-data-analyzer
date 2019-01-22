@@ -20,5 +20,6 @@ public interface ApplicationContext {
     @Nonnull
     <T> T getService(@Nonnull Class<T> clsToken, @Nonnull String serviceName, @Nonnull String bundleName, @Nullable BundleVersion bundleVersion) throws ServiceNotFoundException;
 
+    @Nonnull
     ConfigurationContext getConfigurationContext();
 }

@@ -21,4 +21,5 @@ dependencies {
     implementation dependencyManagement['org.slf4j:slf4j-api']
     implementation dependencyManagement['commons-io:commons-io']
     implementation dependencyManagement['org.apache.commons:commons-lang3']
+    implementation dependencyManagement['javax.validation:validation-api']
 }
