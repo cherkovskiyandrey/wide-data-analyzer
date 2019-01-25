@@ -12,22 +12,58 @@ import com.cherkovskiy.application_context.configuration.resources.MutableResour
 
 import javax.annotation.Nonnull;
 
-public abstract class AbstractConfiguration implements ConfigurableConfiguration, ObjectMappingConfiguration {
+public class ConfigurationImpl implements ConfigurableConfiguration, ObjectMappingConfiguration {
 
-    protected final MutableResource<PropertiesSource<?>> propertySources;
-    protected final MutableResource<ConverterService> converterServices;
-    protected final PropertySourcesPropertyResolver propertyResolver;
+    private final MutableResource<PropertiesSource<?>> globalPropertySources;
+    private final MutableResource<ConverterService> globalConverterServices;
+    private final MutableResource<PropertiesSource<?>> propertySources;
+    private final MutableResource<ConverterService> converterServices;
+    private final PropertySourcesPropertyResolver propertyResolver;
 
 
-    public AbstractConfiguration() {
+    public ConfigurationImpl() {
+        this.globalPropertySources = new MutableResourcesImpl<>();
+        this.globalConverterServices = new MutableResourcesImpl<>();
         this.propertySources = new MutableResourcesImpl<>();
         this.converterServices = new MutableResourcesImpl<>();
-        this.converterServices.addFirst(new StandardConverterService());
+        this.globalConverterServices.addFirst(new StandardConverterService());
         this.propertyResolver = new PropertySourcesPropertyResolver(
+                this.globalPropertySources,
+                this.globalConverterServices,
                 this.propertySources,
                 this.converterServices,
                 new SimpleObjectMapper()
         );
+    }
+
+    public ConfigurationImpl(
+            @Nonnull MutableResource<PropertiesSource<?>> globalPropertySources,
+            @Nonnull MutableResource<ConverterService> globalConverterServices,
+            @Nonnull MutableResource<PropertiesSource<?>> propertySources,
+            @Nonnull MutableResource<ConverterService> converterServices) {
+        this.globalPropertySources = globalPropertySources;
+        this.globalConverterServices = globalConverterServices;
+        this.propertySources = propertySources;
+        this.converterServices = converterServices;
+        this.propertyResolver = new PropertySourcesPropertyResolver(
+                this.globalPropertySources,
+                this.globalConverterServices,
+                this.propertySources,
+                this.converterServices,
+                new SimpleObjectMapper()
+        );
+    }
+
+    @Nonnull
+    @Override
+    public MutableResource<PropertiesSource<?>> getGlobalPropertySources() {
+        return globalPropertySources;
+    }
+
+    @Nonnull
+    @Override
+    public MutableResource<ConverterService> getGlobalConverterServices() {
+        return globalConverterServices;
     }
 
     @Nonnull
@@ -52,18 +88,20 @@ public abstract class AbstractConfiguration implements ConfigurableConfiguration
         return propertyResolver.getProperty(key);
     }
 
+    @Nonnull
     @Override
-    public String getProperty(String key, String defaultValue) {
+    public String getProperty(@Nonnull String key, @Nonnull String defaultValue) {
         return propertyResolver.getProperty(key, defaultValue);
     }
 
     @Override
-    public <T> T getProperty(String key, Class<T> targetType) {
+    public <T> T getProperty(@Nonnull String key, @Nonnull Class<T> targetType) {
         return propertyResolver.getProperty(key, targetType);
     }
 
+    @Nonnull
     @Override
-    public <T> T getProperty(String key, Class<T> targetType, T defaultValue) {
+    public <T> T getProperty(@Nonnull String key, @Nonnull Class<T> targetType, @Nonnull T defaultValue) {
         return propertyResolver.getProperty(key, targetType, defaultValue);
     }
 
@@ -73,8 +111,9 @@ public abstract class AbstractConfiguration implements ConfigurableConfiguration
         return propertyResolver.getRequiredProperty(key);
     }
 
+    @Nonnull
     @Override
-    public <T> T getRequiredProperty(String key, Class<T> targetType) throws IllegalStateException {
+    public <T> T getRequiredProperty(@Nonnull String key, @Nonnull Class<T> targetType) throws IllegalStateException {
         return propertyResolver.getRequiredProperty(key, targetType);
     }
 

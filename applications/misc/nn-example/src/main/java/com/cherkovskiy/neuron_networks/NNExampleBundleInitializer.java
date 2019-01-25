@@ -22,18 +22,18 @@ public class NNExampleBundleInitializer implements BundleLifecycle {
      */
     @Override
     public void beforeInit(@Nonnull BundleVersion bundleNameVersion, @Nonnull ConfigurableConfiguration configurableConfiguration) {
-        boolean hasLogDir = StreamSupport.stream(configurableConfiguration.getPropertySources().spliterator(), false)
+        //Set global properties.
+        boolean hasLogDir = StreamSupport.stream(configurableConfiguration.getGlobalPropertySources().spliterator(), false)
                 .anyMatch(propertiesSource -> propertiesSource.containsProperty("global.log_dir"));
 
         if (!hasLogDir) {
-            configurableConfiguration.getPropertySources().addFirst(new MapPropertySource("Overloaded", ImmutableMap.of(
+            configurableConfiguration.getGlobalPropertySources().addFirst(new MapPropertySource("Overloaded", ImmutableMap.of(
                     "global.log_dir",
                     new File(".").getAbsolutePath()
             )));
         }
 
-        //or
-
+        //or: set local properties
         configurableConfiguration.getPropertySources().addLast(
                 new PropertiesFile("NNProperties", "neuralNetwork.properties")
         );

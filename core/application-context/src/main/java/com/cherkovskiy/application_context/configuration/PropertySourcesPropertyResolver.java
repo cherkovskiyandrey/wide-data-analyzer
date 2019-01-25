@@ -1,7 +1,7 @@
 package com.cherkovskiy.application_context.configuration;
 
-import com.cherkovskiy.application_context.api.configuration.sources.PropertiesSource;
 import com.cherkovskiy.application_context.api.configuration.convertors.ConverterService;
+import com.cherkovskiy.application_context.api.configuration.sources.PropertiesSource;
 import com.cherkovskiy.application_context.configuration.mappers.ObjectMapper;
 import com.cherkovskiy.application_context.configuration.sources.AbstractPropertySource;
 import com.cherkovskiy.application_context.configuration.utils.CommonUtils;
@@ -20,34 +20,38 @@ import static java.lang.String.format;
 
 public class PropertySourcesPropertyResolver implements ConfigurationInternal, ObjectMappingConfiguration {
     private final static Pattern pattern = Pattern.compile("^\\[([^\\[\\]]+)].*$");
+    private final Iterable<PropertiesSource<?>> globalPropertySources;
+    private final Iterable<ConverterService> globalConverterService;
     private final Iterable<PropertiesSource<?>> propertySources;
-    private final Iterable<ConverterService> converterServices;
+    private final Iterable<ConverterService> converterService;
     private final ObjectMapper objectMapper;
 
 
     /**
      * Create a new resolver against the given property sources.
      *
-     * @param propertySources  the set of {@link AbstractPropertySource} objects to use
-     * @param converterService
+     * @param globalPropertySources  the set of {@link AbstractPropertySource} objects to use
+     * @param globalConverterService
      * @param objectMapper
      */
-    public PropertySourcesPropertyResolver(Iterable<PropertiesSource<?>> propertySources,
-                                           Iterable<ConverterService> converterService,
-                                           ObjectMapper objectMapper) {
+    public PropertySourcesPropertyResolver(@Nonnull Iterable<PropertiesSource<?>> globalPropertySources,
+                                           @Nonnull Iterable<ConverterService> globalConverterService,
+                                           @Nonnull Iterable<PropertiesSource<?>> propertySources,
+                                           @Nonnull Iterable<ConverterService> converterService,
+                                           @Nonnull ObjectMapper objectMapper) {
+        this.globalPropertySources = globalPropertySources;
+        this.globalConverterService = globalConverterService;
         this.propertySources = propertySources;
-        this.converterServices = converterService;
+        this.converterService = converterService;
         this.objectMapper = objectMapper;
     }
 
 
     @Override
     public boolean containsProperty(@Nonnull String key) {
-        if (this.propertySources != null) {
-            for (PropertiesSource<?> propertySource : this.propertySources) {
-                if (propertySource.containsProperty(key)) {
-                    return true;
-                }
+        for (PropertiesSource<?> propertySource : this.globalPropertySources) {
+            if (propertySource.containsProperty(key)) {
+                return true;
             }
         }
         return false;
@@ -95,7 +99,7 @@ public class PropertySourcesPropertyResolver implements ConfigurationInternal, O
 
     @Nonnull
     @Override
-    public String getRequiredProperty(String key) throws IllegalStateException {
+    public String getRequiredProperty(@Nonnull String key) throws IllegalStateException {
         final String prop = getProperty(key);
         if (prop == null) {
             throw new IllegalStateException(key);
@@ -105,7 +109,7 @@ public class PropertySourcesPropertyResolver implements ConfigurationInternal, O
 
     @Nonnull
     @Override
-    public <T> T getRequiredProperty(String key, Class<T> targetType) throws IllegalStateException {
+    public <T> T getRequiredProperty(@Nonnull String key, @Nonnull Class<T> targetType) throws IllegalStateException {
         final T prop = getProperty(key, targetType);
         if (prop == null) {
             throw new IllegalStateException(format("Could not find mandatory property %s", key));
@@ -163,12 +167,20 @@ public class PropertySourcesPropertyResolver implements ConfigurationInternal, O
                 ;
     }
 
+    //Local properties have high priority
     private Stream<PropertiesSource<?>> propertySourcesAsStream() {
-        return StreamSupport.stream(propertySources.spliterator(), false);
+        return Stream.concat(
+                StreamSupport.stream(propertySources.spliterator(), false),
+                StreamSupport.stream(globalPropertySources.spliterator(), false)
+        );
     }
 
+    //Local converters have high priority
     private Stream<ConverterService> converterServicesAsStream() {
-        return StreamSupport.stream(converterServices.spliterator(), false);
+        return Stream.concat(
+                StreamSupport.stream(converterService.spliterator(), false),
+                StreamSupport.stream(globalConverterService.spliterator(), false)
+        );
     }
 
     @Override

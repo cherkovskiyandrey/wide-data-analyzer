@@ -1,12 +1,13 @@
 package com.cherkovskiy.application_context.configuration.environments;
 
+import com.cherkovskiy.application_context.configuration.resources.MutableResourcesImpl;
 import com.cherkovskiy.application_context.configuration.sources.AbstractPropertySource;
 import com.cherkovskiy.application_context.configuration.sources.impl.SystemEnvironmentPropertySource;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
 
-public class StandardConfiguration extends AbstractConfiguration {
+public abstract class StandardConfiguration extends ConfigurationImpl {
 
     /**
      * System CONFIGURATION property source name: {@value}
@@ -18,8 +19,9 @@ public class StandardConfiguration extends AbstractConfiguration {
      */
     public static final String SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME = "systemProperties";
 
-    public StandardConfiguration() {
-        propertySources.addLast(new AbstractPropertySource(SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME) {
+    public static ConfigurationImpl create() {
+        ConfigurationImpl configuration = new ConfigurationImpl();
+        configuration.getGlobalPropertySources().addLast(new AbstractPropertySource(SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME) {
             @Override
             public Object getProperty(@Nonnull String name) {
                 return System.getProperty(name);
@@ -31,6 +33,16 @@ public class StandardConfiguration extends AbstractConfiguration {
                 return System.getProperties().stringPropertyNames();
             }
         });
-        propertySources.addLast(new SystemEnvironmentPropertySource(SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME));
+        configuration.getGlobalPropertySources().addLast(new SystemEnvironmentPropertySource(SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME));
+        return configuration;
+    }
+
+    public static ConfigurationImpl createLocalConfiguration(@Nonnull ConfigurationImpl parent) {
+        return new ConfigurationImpl(
+                parent.getGlobalPropertySources(),
+                parent.getGlobalConverterServices(),
+                new MutableResourcesImpl<>(),
+                new MutableResourcesImpl<>()
+        );
     }
 }

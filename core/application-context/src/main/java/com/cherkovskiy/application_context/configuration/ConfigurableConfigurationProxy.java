@@ -17,6 +17,18 @@ public class ConfigurableConfigurationProxy implements ConfigurableConfiguration
 
     @Nonnull
     @Override
+    public MutableResource<PropertiesSource<?>> getGlobalPropertySources() {
+        return configurableConfiguration.getGlobalPropertySources();
+    }
+
+    @Nonnull
+    @Override
+    public MutableResource<ConverterService> getGlobalConverterServices() {
+        return configurableConfiguration.getGlobalConverterServices();
+    }
+
+    @Nonnull
+    @Override
     public MutableResource<PropertiesSource<?>> getPropertySources() {
         return configurableConfiguration.getPropertySources();
     }

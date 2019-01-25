@@ -4,6 +4,7 @@ import com.cherkovskiy.application_context.api.configuration.ConfigurableConfigu
 
 import javax.annotation.Nonnull;
 
+
 public interface BundleLifecycle {
 
     /**
