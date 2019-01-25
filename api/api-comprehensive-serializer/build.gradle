@@ -1,10 +1,11 @@
 group 'com.cherkovskiy.api'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'maven'
+//apply plugin: 'maven'
 
 //TODO: just to test dependencies from repository
-getTasks().getByName('build').dependsOn(getTasks().getByName('install'))
+//publish to local repository
+//getTasks().getByName('build').dependsOn(getTasks().getByName('install'))
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'

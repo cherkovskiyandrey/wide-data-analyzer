@@ -37,8 +37,8 @@ dependencies {
     onboard project(':bundles:neural-network-core')
 
     //test loading bundle from maven - failed
-    //onboard project(':bundles:comprehensive-serializer')
-    onboard 'com.cherkovskiy.bundle:comprehensive-serializer:1.0-SNAPSHOT'
+    onboard project(':bundles:comprehensive-serializer')
+    //onboard 'com.cherkovskiy.bundle:comprehensive-serializer:1.0-SNAPSHOT'
 
     //test loading 3rd party from maven - ok + test prohibited using of any except bundles and starter
     //onboard group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: '2.0.1.RELEASE'

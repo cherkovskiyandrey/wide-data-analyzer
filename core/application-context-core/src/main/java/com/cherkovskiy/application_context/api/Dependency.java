@@ -1,10 +1,9 @@
-package com.cherkovskiy.gradle.plugin.api;
+package com.cherkovskiy.application_context.api;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Comparator;
 
-//todo: move to application-context (?)
 public interface Dependency {
 
     @Nonnull

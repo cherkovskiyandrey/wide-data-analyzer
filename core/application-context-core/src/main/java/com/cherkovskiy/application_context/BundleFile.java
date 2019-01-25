@@ -1,11 +1,10 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.gradle.plugin.api.BundleArtifact;
-import com.cherkovskiy.gradle.plugin.api.Dependency;
-import com.cherkovskiy.gradle.plugin.api.ServiceDescriptor;
+import com.cherkovskiy.application_context.api.BundleArtifact;
+import com.cherkovskiy.application_context.api.Dependency;
+import com.cherkovskiy.application_context.api.ServiceDescriptor;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
-import com.cherkovskiy.application_context.BundleDependencyGroup;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedSet;
 
@@ -22,7 +21,6 @@ import java.util.jar.Manifest;
 
 import static java.util.stream.Collectors.toMap;
 
-//todo: move to application-context (?)
 public class BundleFile implements BundleArtifact {
     public static final String BUNDLE_NAME = "WDA-Bundle-Name";
     public static final String BUNDLE_VERSION = "WDA-Bundle-Version";

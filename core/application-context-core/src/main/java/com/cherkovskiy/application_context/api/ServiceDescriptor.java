@@ -1,4 +1,4 @@
-package com.cherkovskiy.gradle.plugin.api;
+package com.cherkovskiy.application_context.api;
 
 import com.cherkovskiy.application_context.api.annotations.Service;
 
@@ -20,5 +20,4 @@ public interface ServiceDescriptor {
     Service.InitType getInitType();
 
     Map<String, AccessType> getInterfaces();
-
 }

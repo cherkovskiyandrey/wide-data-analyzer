@@ -1,10 +1,10 @@
 package com.cherkovskiy.gradle.plugin;
 
-import com.cherkovskiy.gradle.plugin.api.*;
+import com.cherkovskiy.application_context.*;
+import com.cherkovskiy.application_context.api.*;
 import com.cherkovskiy.vfs.DirectoryEntry;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
-import com.cherkovskiy.application_context.BundleDependencyGroup;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 

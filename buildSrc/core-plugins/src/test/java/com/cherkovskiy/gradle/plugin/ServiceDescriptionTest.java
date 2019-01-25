@@ -1,13 +1,14 @@
 package com.cherkovskiy.gradle.plugin;
 
+import com.cherkovskiy.application_context.ManifestServiceDescriptor;
 import com.cherkovskiy.application_context.api.annotations.Service;
-import com.cherkovskiy.gradle.plugin.api.ServiceDescriptor;
+import com.cherkovskiy.application_context.api.ServiceDescriptor;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.cherkovskiy.gradle.plugin.ManifestServiceDescriptor.*;
+import static com.cherkovskiy.application_context.ManifestServiceDescriptor.*;
 import static junit.framework.TestCase.assertEquals;
 
 public class ServiceDescriptionTest {

@@ -1,6 +1,6 @@
 package com.cherkovskiy.gradle.plugin;
 
-import com.cherkovskiy.gradle.plugin.api.*;
+import com.cherkovskiy.application_context.api.*;
 import com.google.common.collect.Sets;
 
 import java.util.List;

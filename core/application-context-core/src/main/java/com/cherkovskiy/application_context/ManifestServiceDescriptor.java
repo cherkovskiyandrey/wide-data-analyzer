@@ -1,7 +1,7 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.application_context;
 
+import com.cherkovskiy.application_context.api.ServiceDescriptor;
 import com.cherkovskiy.application_context.api.annotations.Service;
-import com.cherkovskiy.gradle.plugin.api.ServiceDescriptor;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
@@ -13,7 +13,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-//TODO: move to common:application-context-common ???? нужно подождать как напишу плагин сборки плагинов - что там будет в манифесте - из него мы ведь будем читать
 public class ManifestServiceDescriptor implements ServiceDescriptor {
     public static final String GROUP_SEPARATOR = ";";
     public static final String SERVICE_CLASS = "class=>";

@@ -1,11 +1,12 @@
 group 'com.cherkovskiy.bundle'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'maven'
+//apply plugin: 'maven'
 
 
 //TODO: just to test dependencies from repository
-getTasks().getByName('build').dependsOn(getTasks().getByName('install'))
+//publish to local repository
+//getTasks().getByName('build').dependsOn(getTasks().getByName('install'))
 
 dependencies {
 
@@ -13,6 +14,7 @@ dependencies {
     api project(':api:api-comprehensive-serializer')
 
     implementation project(':api:api-application-context')
+    //implementation project(':api:api-neural-network') //TODO: circle dependency check
 
     implementation dependencyManagement['commons-io:commons-io']
     implementation dependencyManagement['org.apache.commons:commons-lang3']

@@ -7,6 +7,10 @@ sourceCompatibility = 1.8
 
 dependencies {
 
+    api project(':api:api-application-context')
+
+    implementation project(':common:virtual-file-system')
+
     //------ 3-rd path dependencies
     implementation dependencyManagement['com.google.guava:guava']
     implementation dependencyManagement['com.google.code.findbugs:jsr305']

@@ -1,7 +1,6 @@
-package com.cherkovskiy.gradle.plugin.api;
+package com.cherkovskiy.application_context.api;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.util.Set;
 
 public interface ResolvedStarterArtifact extends ResolvedDependency {

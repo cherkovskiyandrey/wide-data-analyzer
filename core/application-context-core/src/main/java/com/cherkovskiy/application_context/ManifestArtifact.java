@@ -1,7 +1,7 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.gradle.plugin.api.Dependency;
-import com.cherkovskiy.gradle.plugin.api.ResolvedDependency;
+import com.cherkovskiy.application_context.api.Dependency;
+import com.cherkovskiy.application_context.api.ResolvedDependency;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;

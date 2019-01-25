@@ -1,9 +1,10 @@
 package com.cherkovskiy.gradle.plugin.application;
 
+import com.cherkovskiy.application_context.BundleFile;
 import com.cherkovskiy.gradle.plugin.*;
-import com.cherkovskiy.gradle.plugin.api.BundleResolver;
-import com.cherkovskiy.gradle.plugin.api.ResolvedBundleArtifact;
-import com.cherkovskiy.gradle.plugin.api.ResolvedStarterArtifact;
+import com.cherkovskiy.application_context.api.BundleResolver;
+import com.cherkovskiy.application_context.api.ResolvedBundleArtifact;
+import com.cherkovskiy.application_context.api.ResolvedStarterArtifact;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
