@@ -413,7 +413,7 @@ class AImpl implements A {
 Можно конечно сделать граф для SINGLETON и не LAZY и тех что не используют локатор в конструкторе и в postConstruct
 Запрещать юзать там локатор не стоит.
 Вот пример:
-class AImpl implement A, ServiceLifecycle{
+class AImpl implement A, ServiceLifecycle {
 	public void postConstruct() {
 		SomeStuff someStuff = ApplicationContextHolder.currentContext().getService(B.class).createSomeStuff();
 		someStuff.invoke();
@@ -453,6 +453,19 @@ class AImpl implement A, ServiceLifecycle{
 7.3.5 Добавляем этот сервис в контекст со статусом INITIALISED
 
 7.4. Сохраняем полученый граф бинов, который может эвалюцианировать для того что бы была возможность вызвать ServiceLifecycle#preDestroy в нужном порядке
+
+
+TODO: описать кейс для чего это может быть нужно
+7.5 Выгрузка бандлов:
+Т.к. для любого сервиса создаётся прокси объект, который загружается класслоадером контекста, то при выгрузке синглтоны прокси могут быть уведомлены
+о выгрузке по подписке прототипы у которые Closable так же могут по подписке быть уведомлены, а обычные прототипы при каждом вызове метода
+через прокси, прокси проверят не выгруже ли бандл и есть выгружен - кидает исключение
+Так же перед выгрузкой будет вызван листенер, если он зарегестрирован:
+См сюда: com.cherkovskiy.application_context.ApplicationContextHolder
+
+7.6 Перезагрузка бандла
+См сюда: com.cherkovskiy.application_context.ApplicationContextHolder
+
 
 TODO: завершение приложения
 

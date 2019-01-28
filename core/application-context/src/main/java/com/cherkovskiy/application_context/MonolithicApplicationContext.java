@@ -1,18 +1,21 @@
 package com.cherkovskiy.application_context;
 
 import com.cherkovskiy.application_context.api.ApplicationContext;
+import com.cherkovskiy.application_context.api.Bundle;
 import com.cherkovskiy.application_context.api.BundleVersion;
 import com.cherkovskiy.application_context.api.configuration.ConfigurationContext;
 import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
-import com.cherkovskiy.application_context.configuration.ConfigurationContextProxy;
-import com.cherkovskiy.application_context.configuration.environments.ConfigurationImpl;
-import com.cherkovskiy.application_context.configuration.environments.StandardConfiguration;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class MonolithicApplicationContext implements ApplicationContext {
-    private final ConfigurationImpl globalConfiguration;
+    //private final ConfigurationImpl globalConfiguration;
+    @Nonnull
+    private final Bundle appBundle;
+    @Nonnull
+    private final List<Bundle> localBundles;
 
     //TODO: This code move to bundleContainer.getCurrentBundle()
     //----------------
@@ -21,14 +24,22 @@ public class MonolithicApplicationContext implements ApplicationContext {
     //----------------
     //private final BundleContainer bundleContainer;
 
-    MonolithicApplicationContext() {
-        this.globalConfiguration = StandardConfiguration.create();
+    MonolithicApplicationContext(@Nonnull Bundle appBundle, @Nonnull List<Bundle> localBundles) {
+        this.appBundle = appBundle;
+        this.localBundles = localBundles;
+        //this.globalConfiguration = StandardConfiguration.create();
         //TODO: This code move to bundleContainer.getCurrentBundle()
         //----------------
 //        this.configurationContext = new ConfigurationContextProxy(this.globalConfiguration);
 //        this.configurableConfiguration = new ConfigurableConfigurationProxy(this.globalConfiguration);
         //----------------
         //this.bundleContainer = new BundleContainer(this.globalConfiguration);
+    }
+
+    public void init() {
+        appBundle.load();
+
+        //todo
     }
 
     @Nonnull
@@ -62,9 +73,12 @@ public class MonolithicApplicationContext implements ApplicationContext {
         //return configurationContext;
         //TODO: This code move to bundleContainer.getCurrentBundle().getConfigurationContext();
         //-------------
-        ConfigurationImpl configuration = StandardConfiguration.createLocalConfiguration(globalConfiguration);
-        return new ConfigurationContextProxy(configuration);
+//        ConfigurationImpl configuration = StandardConfiguration.createLocalConfiguration(globalConfiguration);
+//        return new ConfigurationContextProxy(configuration);
         //-------------
         //return bundleContainer.getCurrentBundle().getConfigurationContext();
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
+
+
 }

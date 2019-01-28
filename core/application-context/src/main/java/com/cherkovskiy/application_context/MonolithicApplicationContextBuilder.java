@@ -1,12 +1,13 @@
 package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.application_context.api.*;
+import com.cherkovskiy.application_context.api.ApplicationContext;
+import com.cherkovskiy.application_context.api.Bundle;
+import com.cherkovskiy.application_context.api.ContextBuilder;
+import com.cherkovskiy.application_context.api.ResolvedBundleArtifact;
+import com.cherkovskiy.application_context.configuration.environments.ConfigurationImpl;
+import com.cherkovskiy.application_context.configuration.environments.StandardConfiguration;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,7 +31,17 @@ public class MonolithicApplicationContextBuilder implements ContextBuilder {
         List<ResolvedBundleArtifact> resolvedBundles = applicationResolver.resolveOtherBundles();
 
         //TODO: Идём по всем бандлам создаём для каждого Bundle объект
+        final ConfigurationImpl globalConfiguration = StandardConfiguration.create();
+        final Bundle appBundle = new LocalBundle(resolvedAppBundleArtifact, globalConfiguration);
+        final List<Bundle> localBundles = resolvedBundles.stream()
+                .map(resolvedBundleArtifact -> new LocalBundle(resolvedBundleArtifact, globalConfiguration))
+                .collect(Collectors.toList());
 
-        return new MonolithicApplicationContext();
+        //TODO: грузим import сервисы
+        //List<Bundle> remoteBundle = //TODO
+
+        MonolithicApplicationContext context = new MonolithicApplicationContext(appBundle, localBundles);
+        context.init();
+        return context;
     }
 }

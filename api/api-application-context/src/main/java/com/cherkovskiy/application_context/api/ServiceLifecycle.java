@@ -25,12 +25,19 @@ public interface ServiceLifecycle {
     }
 
 
+//    /**
+//     * Is invoked if any depended services changed/reloaded or refreshed.
+//     * For example: bundle with depended services is reloaded.
+//     *
+//     * @throws Exception
+//     */
+//    default void refresh() throws Exception {
+//    }
+
     /**
-     * Is invoked if any depended services changed/reloaded or refreshed.
-     * For example: bundle with depended services is reloaded.
-     *
-     * @throws Exception
+     * If service in valid. Use by framework. It could attempt to recreate service in this case.
      */
-    default void refresh() throws Exception {
+    default boolean isValid() {
+        return true;
     }
 }

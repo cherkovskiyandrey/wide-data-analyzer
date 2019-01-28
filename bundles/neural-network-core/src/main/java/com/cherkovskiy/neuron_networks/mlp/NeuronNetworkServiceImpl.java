@@ -1,8 +1,10 @@
 package com.cherkovskiy.neuron_networks.mlp;
 
+import com.cherkovskiy.application_context.ApplicationContextHolder;
 import com.cherkovskiy.application_context.api.ServiceLifecycle;
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.cherkovskiy.application_context.api.annotations.ServiceInject;
+import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
 import com.cherkovskiy.comprehensive_serializer.api.SerializerService;
 import com.cherkovskiy.neuron_networks.api.*;
 
@@ -26,6 +28,28 @@ public class NeuronNetworkServiceImpl implements NeuronNetworkService, ServiceLi
 
     public NeuronNetworkServiceImpl(@ServiceInject SerializerService serializerService) {
         this.serializerService = serializerService;
+
+
+
+        //TODO: продумать интерфейс евент системы
+//        ApplicationContextHolder.currentContext().registerListener(SerializerService.class, event -> {
+//
+//            //TODO: реакция на выгрузку бандла с нужным сервисом
+//            if (event.getType() == UNLOADED) {
+//                try {
+//                    //TODO: попытаемся поискать другой бандл с имплементацией этого сервиса
+//                    this.serializerService = ApplicationContextHolder.currentContext().getService(SerializerService.class);
+//                } catch (ServiceNotFoundException e) {
+//                    //TODO: отрегестрируемся особенно если я прототип
+//                    ApplicationContextHolder.currentContext().unregisterListener(this); //
+//                    //TODO: то я реализовал бы ServiceLifecycle.isValid и вернул бы там false, а фреймворк - попытался бы пересоздать меня
+//                    isValid = false;
+//                }
+//                //TODO: бандл бы перезагружен, или та же версия или более свежая
+//            } else if (event.getType() == RELOADED) {
+//                //TODO: можно ничего не делать, ссылки в прокси сами поменялись
+//            }
+//        });
     }
 
     @Nonnull
