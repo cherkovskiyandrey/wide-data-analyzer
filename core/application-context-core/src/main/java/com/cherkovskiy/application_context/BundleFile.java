@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedSet;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -74,6 +75,12 @@ public class BundleFile implements BundleArtifact {
     @Override
     public Set<ServiceDescriptor> getServices() {
         return services;
+    }
+
+    @Nullable
+    @Override
+    public String getStarter() {
+        throw new UnsupportedOperationException();
     }
 
     @Nonnull

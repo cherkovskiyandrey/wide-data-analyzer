@@ -5,18 +5,19 @@ import java.net.URLClassLoader;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
+ * Created from system class loader.
  * Vanilla java only.
  */
 class ApplicationContextClassLoader extends URLClassLoader {
     private final AtomicReference<Class<?>> starterRef = new AtomicReference<>();
 
-    ApplicationContextClassLoader(URL[] resources, ApplicationBootstrapClassLoader parent) {
+    ApplicationContextClassLoader(URL[] resources, ClassLoader parent) {
         super(resources, parent);
     }
 
     @Override
     public Class<?> loadClass(String s) throws ClassNotFoundException {
-        if (Starter.class.getName().equalsIgnoreCase(s)) {
+        if (LauncherProxy.class.getName().equalsIgnoreCase(s)) {
             try {
                 starterRef.getAndUpdate(current -> {
                     if (current == null) {

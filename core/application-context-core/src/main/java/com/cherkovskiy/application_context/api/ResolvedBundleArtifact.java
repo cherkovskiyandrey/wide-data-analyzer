@@ -1,6 +1,7 @@
 package com.cherkovskiy.application_context.api;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Comparator;
 import java.util.Set;
@@ -21,6 +22,9 @@ public interface ResolvedBundleArtifact {
     //Bundle can export only services from api dependencies without services from transitive these api dependencies
     @Nonnull
     Set<ServiceDescriptor> getServices();
+
+    @Nullable
+    String getStarter();
 
     @Nonnull
     Set<ResolvedDependency> getApiExport();

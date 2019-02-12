@@ -6,6 +6,9 @@ version '1.0-SNAPSHOT'
 
 dependencies {
     implementation "commons-io:commons-io:2.5"
+    implementation "net.bytebuddy:byte-buddy:1.9.2"
+    implementation "org.apache.bcel:bcel:6.2"
+    implementation dependencyManagement['com.google.guava:guava']
 
     onboard project(':core:application-starter')
 }

@@ -2,6 +2,8 @@ package com.cherkovskiy.application_context;
 
 import com.cherkovskiy.application_context.api.BundleVersion;
 
+import javax.annotation.Nonnull;
+
 public class BundleVersionImpl implements BundleVersion {
     @Override
     public int getMajor() {
@@ -16,5 +18,10 @@ public class BundleVersionImpl implements BundleVersion {
     @Override
     public String getSnapshot() {
         throw new UnsupportedOperationException("It is not supported yet.");
+    }
+
+    @Nonnull
+    public static BundleVersion valueOf(@Nonnull String versionString) {
+        //todo
     }
 }

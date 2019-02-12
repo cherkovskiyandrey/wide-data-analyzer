@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Set;
 
@@ -65,6 +66,12 @@ public class ResolvedBundleFile implements ResolvedBundleArtifact {
     @Override
     public Set<ServiceDescriptor> getServices() {
         return services;
+    }
+
+    @Nullable
+    @Override
+    public String getStarter() {
+        throw new UnsupportedOperationException();
     }
 
     @Nonnull

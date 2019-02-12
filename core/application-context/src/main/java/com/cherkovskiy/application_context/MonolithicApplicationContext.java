@@ -3,12 +3,14 @@ package com.cherkovskiy.application_context;
 import com.cherkovskiy.application_context.api.ApplicationContext;
 import com.cherkovskiy.application_context.api.Bundle;
 import com.cherkovskiy.application_context.api.BundleVersion;
+import com.cherkovskiy.application_context.api.ServiceDescriptor;
 import com.cherkovskiy.application_context.api.configuration.ConfigurationContext;
 import com.cherkovskiy.application_context.api.exceptions.ServiceNotFoundException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Set;
 
 public class MonolithicApplicationContext implements ApplicationContext {
     //private final ConfigurationImpl globalConfiguration;
@@ -37,9 +39,11 @@ public class MonolithicApplicationContext implements ApplicationContext {
     }
 
     public void init() {
+        // App bundle load first and eager
         appBundle.load();
+        Set<ServiceDescriptor> appBundleServices = appBundle.getServices();
 
-        //todo
+        //todo: закидываем всё в граф, и дальше по спеке
     }
 
     @Nonnull
@@ -81,4 +85,7 @@ public class MonolithicApplicationContext implements ApplicationContext {
     }
 
 
+    public void destroy() {
+        //todo: stop all services and destroy all bundles
+    }
 }

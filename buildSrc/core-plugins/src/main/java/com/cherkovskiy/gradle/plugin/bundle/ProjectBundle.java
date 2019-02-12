@@ -16,6 +16,7 @@ import org.slieb.throwables.FunctionWithThrowable;
 import org.slieb.throwables.SuppressedException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
@@ -177,6 +178,12 @@ class ProjectBundle implements ResolvedBundleArtifact {
     @Override
     public Set<ServiceDescriptor> getServices() {
         return services;
+    }
+
+    @Nullable
+    @Override
+    public String getStarter() {
+        throw new UnsupportedOperationException();
     }
 
     @Nonnull

@@ -1,6 +1,7 @@
 package com.cherkovskiy.application_context.api;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Comparator;
 import java.util.Set;
@@ -18,6 +19,9 @@ public interface BundleArtifact {
 
     @Nonnull
     Set<ServiceDescriptor> getServices();
+
+    @Nullable
+    String getStarter();
 
     @Nonnull
     Set<Dependency> getApiExport();
