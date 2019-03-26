@@ -9,6 +9,7 @@ dependencies {
     implementation "net.bytebuddy:byte-buddy:1.9.2"
     implementation "org.apache.bcel:bcel:6.2"
     implementation dependencyManagement['com.google.guava:guava']
+    implementation dependencyManagement['org.apache.commons:commons-lang3']
 
     onboard project(':core:application-starter')
 }

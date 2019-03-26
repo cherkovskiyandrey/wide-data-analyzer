@@ -405,9 +405,9 @@ TODO: редезайн этого пункта - допускаем лупы (*�
 Нет возможности построить граф не вызывая конструктора + postConstruct логику сервисов,
 Пример:
 class AImpl implements A {
-	private final B b;
+	private final B agenv2;
 	public A() {
-		this.b = ApplicationContextHolder.currentContext().getService(B.class);
+		this.agenv2 = ApplicationContextHolder.currentContext().getService(B.class);
 	}
 }
 Можно конечно сделать граф для SINGLETON и не LAZY и тех что не используют локатор в конструкторе и в postConstruct
