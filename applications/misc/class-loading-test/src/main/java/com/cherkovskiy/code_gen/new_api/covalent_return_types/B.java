@@ -13,7 +13,7 @@ public interface B {
 
     //default method
     default void defMethod(A a) {
-        System.out.println(a.method());
+        //System.out.println(a.method());
     }
 
     //standard collections

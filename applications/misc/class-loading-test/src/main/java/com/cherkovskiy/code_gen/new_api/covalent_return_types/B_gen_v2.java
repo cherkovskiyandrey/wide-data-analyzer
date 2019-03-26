@@ -13,7 +13,7 @@ public interface B_gen_v2 extends B {
 
     //default method - оставляем как есть
     default void defMethod(A_gen_v2 a) {
-        System.out.println(a.method());
+        //System.out.println(a.method());
         System.out.println(a.newMethod());
     }
 

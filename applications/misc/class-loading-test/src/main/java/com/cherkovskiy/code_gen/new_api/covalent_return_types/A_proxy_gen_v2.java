@@ -1,6 +1,9 @@
 package com.cherkovskiy.code_gen.new_api.covalent_return_types;
 
 import javax.annotation.Nonnull;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 public class A_proxy_gen_v2 implements A_gen_v2 {
     private final A a;
@@ -24,8 +27,8 @@ public class A_proxy_gen_v2 implements A_gen_v2 {
     }
 
     @Override
-    public String method() {
-        return a.method();
+    public Collection<String> method(String arg1, List<LocalDateTime> times, int num) {
+        return a.method(arg1, times, num);
     }
 
     @Override

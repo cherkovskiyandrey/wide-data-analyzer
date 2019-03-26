@@ -1,6 +1,7 @@
 package com.cherkovskiy.code_gen.new_api.covalent_return_types;
 
 import javax.annotation.Nonnull;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -8,7 +9,6 @@ public class B_gen_v2_impl implements B_gen_v2 {
     @Override
     public String simpleArg(String str, A_gen_v2 a, Collection<Object> obj) {
         //todo: original logic
-        System.out.println(a.method());
         System.out.println(a.newMethod()); // убедиться что он поддерживается
         return "____";
     }
@@ -38,8 +38,8 @@ public class B_gen_v2_impl implements B_gen_v2 {
             }
 
             @Override
-            public String method() {
-                return "method";
+            public Collection<String> method(String arg1, List<LocalDateTime> times, int num) {
+                return Collections.singletonList("method");
             }
 
             @Override

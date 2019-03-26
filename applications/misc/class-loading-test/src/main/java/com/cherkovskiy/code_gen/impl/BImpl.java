@@ -5,10 +5,11 @@ import com.cherkovskiy.code_gen.api.B;
 import com.cherkovskiy.code_gen.api.L;
 
 import java.io.IOException;
+import java.util.Collection;
 
 public class BImpl implements B {
     @Override
-    public L f1(A a) {
+    public L f1(String str, A a, Collection<Object> obj) {
         //TODO: создание локального объекта A нужно проверить
         try {
             a.f1();

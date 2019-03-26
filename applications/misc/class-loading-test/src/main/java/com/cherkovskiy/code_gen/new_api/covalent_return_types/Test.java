@@ -13,7 +13,7 @@ public class Test {
 
         B b = c_gen_v2;
         A a = b.covalent(); //old code
-        System.out.println(a.method());
+        //System.out.println(a.method());
         b.defMethod(a);
     }
 }

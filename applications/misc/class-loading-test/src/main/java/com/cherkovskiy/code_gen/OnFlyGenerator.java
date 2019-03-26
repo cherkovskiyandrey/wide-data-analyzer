@@ -18,7 +18,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.stream.IntStream;
 
 
 //TODO: выкинуть всё в спеку
@@ -79,7 +81,6 @@ public class OnFlyGenerator implements Runnable {
             loadA(bootstrapFilteredClassLoader);
             loadB(bootstrapFilteredClassLoader);
 
-            //TODO: сгененрировать equals и hashcode и проксировать их так же (clone ?)
             createAGenConvClass(bootstrapFilteredClassLoader);
             loadNewAImpl(bootstrapFilteredClassLoader);
 
@@ -182,6 +183,7 @@ public class OnFlyGenerator implements Runnable {
         Repository.addClass(classGenBImpl.getJavaClass());
 
 
+        //есть вложенный класс
         JavaClass javaClassBImpl$1 = Repository.lookupClass(NEW_IMPL_PACKAGE.concat(".BImpl$1"));
         javaClassBImpl$1 = Utils.patchPool(ImmutableMap.of(NEW_API_PACKAGE.concat(".A"), TARGET_API_PACKAGE.concat(".A_generated_v2")), javaClassBImpl$1);
 
@@ -210,23 +212,48 @@ public class OnFlyGenerator implements Runnable {
         //----
 
         Object bImplObj = bImplClass.newInstance();
-        bImplClass.getMethod("f1", A.class).invoke(bImplObj, new AImpl());
+        bImplClass.getMethod("f1", String.class, A.class, Collection.class).invoke(bImplObj, "does'n matter", new AImpl(), Collections.emptyList());
     }
 
     /**
      * Code(max_stack = 4, max_locals = 2, code_length = 13)
-     0:    aload_0
-     1:    new		<com.cherkovskiy.code_gen.new_api.covalent_return_types.A_proxy_gen_v2> (7)
-     4:    dup
-     5:    aload_1
-     6:    invokespecial	com.cherkovskiy.code_gen.new_api.covalent_return_types.A_proxy_gen_v2.<init> (Lcom/cherkovskiy/code_gen/new_api/covalent_return_types/A;)V (8)
-     9:    invokevirtual	com.cherkovskiy.code_gen.new_api.covalent_return_types.B_gen_v2_impl.simpleArg (Lcom/cherkovskiy/code_gen/new_api/covalent_return_types/A_gen_v2;)V (9)
-     12:   return
-
-     Attribute(s) =
-     LineNumber(0, 21), LineNumber(12, 22)
-     LocalVariable(start_pc = 0, length = 13, index = 0:com.cherkovskiy.code_gen.new_api.covalent_return_types.B_gen_v2_impl this)
-     LocalVariable(start_pc = 0, length = 13, index = 1:com.cherkovskiy.code_gen.new_api.covalent_return_types.A a)
+     * 0:    aload_0
+     * <p>
+     * 1:    new		<com.cherkovskiy.code_gen.new_api.covalent_return_types.A_proxy_gen_v2> (7)
+     * 4:    dup
+     * 5:    aload_1
+     * 6:    invokespecial	com.cherkovskiy.code_gen.new_api.covalent_return_types.A_proxy_gen_v2.<init> (Lcom/cherkovskiy/code_gen/new_api/covalent_return_types/A;)V (8)
+     * <p>
+     * 9:    invokevirtual	com.cherkovskiy.code_gen.new_api.covalent_return_types.B_gen_v2_impl.simpleArg (Lcom/cherkovskiy/code_gen/new_api/covalent_return_types/A_gen_v2;)V (9)
+     * 12:   return
+     * <p>
+     * Attribute(s) =
+     * LineNumber(0, 21), LineNumber(12, 22)
+     * LocalVariable(start_pc = 0, length = 13, index = 0:com.cherkovskiy.code_gen.new_api.covalent_return_types.B_gen_v2_impl this)
+     * LocalVariable(start_pc = 0, length = 13, index = 1:com.cherkovskiy.code_gen.new_api.covalent_return_types.A a)
+     * <p>
+     * <p>
+     * Code(max_stack = 5, max_locals = 4, code_length = 15)
+     * 0:    aload_0
+     * 1:    aload_1
+     * <p>
+     * 2:    new		<com.cherkovskiy.code_gen.new_api.covalent_return_types.A_proxy_gen_v2> (7)
+     * 5:    dup
+     * 6:    aload_2
+     * 7:    invokespecial	com.cherkovskiy.code_gen.new_api.covalent_return_types.A_proxy_gen_v2.<init> (Lcom/cherkovskiy/code_gen/new_api/covalent_return_types/A;)V (8)
+     * <p>
+     * 10:   aload_3
+     * 11:   invokevirtual	com.cherkovskiy.code_gen.new_api.covalent_return_types.B_gen_v2_impl.simpleArg (Ljava/lang/String;Lcom/cherkovskiy/code_gen/new_api/covalent_return_types/A_gen_v2;Ljava/util/Collection;)Ljava/lang/String; (9)
+     * 14:   areturn
+     * <p>
+     * Attribute(s) =
+     * LineNumber(0, 22)
+     * LocalVariable(start_pc = 0, length = 15, index = 0:com.cherkovskiy.code_gen.new_api.covalent_return_types.B_gen_v2_impl this)
+     * LocalVariable(start_pc = 0, length = 15, index = 1:java.lang.String str)
+     * LocalVariable(start_pc = 0, length = 15, index = 2:com.cherkovskiy.code_gen.new_api.covalent_return_types.A a)
+     * LocalVariable(start_pc = 0, length = 15, index = 3:java.util.Collection obj)
+     * LocalVariableTypes(start_pc = 0, length = 15, index = 3:java.util.Collection<java.lang.Object> obj)
+     *
      * @param aRecvMethod
      * @param classGenBImpl
      */
@@ -234,27 +261,56 @@ public class OnFlyGenerator implements Runnable {
         String converter = NEW_IMPL_PACKAGE.concat(".A_to_A_v2_gen_converter");
         String fromInterface = TARGET_API_PACKAGE.concat(".A");
         String toInterface = TARGET_API_PACKAGE.concat(".A_generated_v2");
+
+        Collection<Integer> paramsIdxForReplace = Lists.newArrayList();
+        for (int i = 0; i < aRecvMethod.getArgumentTypes().length; ++i) {
+            if (aRecvMethod.getArgumentTypes()[i].normalizeForStackOrLocal().toString().contains(fromInterface)) {
+                paramsIdxForReplace.add(i);
+            }
+        }
+
+        final Type[] argumentTypes = Arrays.stream(aRecvMethod.getArgumentTypes())
+                .map(type -> {
+                    if (type.normalizeForStackOrLocal().toString().contains(fromInterface)) {
+                        return ObjectType.getInstance(toInterface);
+                    }
+                    return type;
+                })
+                .toArray(Type[]::new);
+
         InstructionList instructionList = new InstructionList();
         InstructionFactory instructionFactory = new InstructionFactory(classGenBImpl);
 
         instructionList.append(instructionFactory.createPrintln("INVOKE FROM STUB METHOD:"));//for debug
         instructionList.append(new ALOAD(0));
-        instructionList.append(instructionFactory.createNew(converter));
-        instructionList.append(new DUP());
-        instructionList.append(new ALOAD(1));
-        instructionList.append(instructionFactory.createInvoke(converter,
-                "<init>",
-                Type.VOID,
-                new Type[]{ObjectType.getInstance(fromInterface)},
-                Const.INVOKESPECIAL)
-        );
+
+        int oldIdx = 0;
+        for (int paramIdx : paramsIdxForReplace) {
+            for (int j = oldIdx; j < paramIdx; ++j) {
+                instructionList.append(new ALOAD(j + 1));
+            }
+            instructionList.append(instructionFactory.createNew(converter));
+            instructionList.append(new DUP());
+            instructionList.append(new ALOAD(paramIdx + 1));
+            instructionList.append(instructionFactory.createInvoke(converter,
+                    "<init>",
+                    Type.VOID,
+                    new Type[]{ObjectType.getInstance(fromInterface)},
+                    Const.INVOKESPECIAL)
+            );
+            oldIdx = paramIdx + 1;
+        }
+        for (int j = oldIdx; j < aRecvMethod.getArgumentTypes().length; ++j) {
+            instructionList.append(new ALOAD(j + 1));
+        }
+
         instructionList.append(instructionFactory.createInvoke(classGenBImpl.getClassName(), //method proxy to
                 aRecvMethod.getName(),
                 aRecvMethod.getReturnType(),
-                new Type[]{ObjectType.getInstance(toInterface)}, //todo: n argument have to be supported
+                argumentTypes,
                 Const.INVOKEVIRTUAL)
         );
-        instructionList.append(new ARETURN()); //TODO: only for void methods
+        instructionList.append(Const.T_VOID == aRecvMethod.getReturnType().getType() ? new RETURN() : new ARETURN());
 
         MethodGen overrideMethod = new MethodGen(
                 aRecvMethod.getModifiers() & ~Modifier.ABSTRACT,
@@ -331,7 +387,6 @@ public class OnFlyGenerator implements Runnable {
         byte[] binaryClass = Utils.serialize(classGen.getJavaClass());
         bootstrapFilteredClassLoader.addClass(TARGET_API_PACKAGE.concat(".B_generated_v2"), binaryClass);
         Repository.addClass(classGen.getJavaClass());
-        //todo: поддержка женериков как тут: com.cherkovskiy.code_gen.new_api.covalent_return_types.B_gen_v2
 
         testLoadingNewB();
     }
@@ -440,6 +495,24 @@ public class OnFlyGenerator implements Runnable {
         instructionList.dispose();
     }
 
+    /**
+     * Code(max_stack = 4, max_locals = 4, code_length = 13)
+     * 0:    aload_0
+     * 1:    getfield		com.cherkovskiy.code_gen.new_api.covalent_return_types.A_proxy_gen_v2.a Lcom/cherkovskiy/code_gen/new_api/covalent_return_types/A; (2)
+     * 4:    aload_1
+     * 5:    aload_2
+     * 6:    iload_3
+     * 7:    invokeinterface	com.cherkovskiy.code_gen.new_api.covalent_return_types.A.method (Ljava/lang/String;Ljava/util/List;I)Ljava/util/Collection; (6)	4	0
+     * 12:   areturn
+     * <p>
+     * Attribute(s) =
+     * LineNumber(0, 31)
+     * LocalVariable(start_pc = 0, length = 13, index = 0:com.cherkovskiy.code_gen.new_api.covalent_return_types.A_proxy_gen_v2 this)
+     * LocalVariable(start_pc = 0, length = 13, index = 1:java.lang.String arg1)
+     * LocalVariable(start_pc = 0, length = 13, index = 2:java.util.List times)
+     * LocalVariable(start_pc = 0, length = 13, index = 3:int num)
+     * LocalVariableTypes(start_pc = 0, length = 13, index = 2:java.util.List<java.time.LocalDateTime> times)
+     */
     private void createProxyMethods(
             @Nonnull ClassGen classGen,
             @Nonnull InstructionList instructionList,
@@ -454,6 +527,7 @@ public class OnFlyGenerator implements Runnable {
             instructionList.append(instructionFactory.createPrintln("INVOKE FROM PROXY:"));//for debug
             instructionList.append(new ALOAD(0));
             instructionList.append(instructionFactory.createGetField(currentClassName, "original", ObjectType.getInstance(fromInterface)));
+            IntStream.range(0, method.getArgumentTypes().length).forEach(i -> instructionList.append(new ALOAD(i + 1)));
             instructionList.append(instructionFactory.createInvoke(
                     fromInterface,
                     method.getName(),
@@ -461,7 +535,7 @@ public class OnFlyGenerator implements Runnable {
                     method.getArgumentTypes(),
                     Const.INVOKEINTERFACE)
             );
-            instructionList.append(new RETURN());
+            instructionList.append(Const.T_VOID == method.getReturnType().getType() ? new RETURN() : new ARETURN());
 
             MethodGen overrideMethod = new MethodGen(
                     method.getModifiers() & ~Modifier.ABSTRACT,
@@ -492,9 +566,9 @@ public class OnFlyGenerator implements Runnable {
             @Nonnull String toInterface
     ) throws ClassNotFoundException {
         InstructionFactory instructionFactory = new InstructionFactory(classGen);
-        JavaClass fromClass = Repository.lookupClass(toInterface);
+        JavaClass toClass = Repository.lookupClass(toInterface);
 
-        for (Method method : fromClass.getMethods()) {
+        for (Method method : toClass.getMethods()) {
             //1. create exception object IllegalStateException
             //2. throw this object
             instructionList.append(instructionFactory.createPrintln("INVOKE FROM PROXY:"));//for debug
