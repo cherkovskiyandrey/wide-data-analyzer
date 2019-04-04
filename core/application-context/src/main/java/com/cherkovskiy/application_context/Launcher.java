@@ -39,7 +39,7 @@ public class Launcher {
             throw new RuntimeException(e);//todo
         }
 
-        Runtime.getRuntime().removeShutdownHook(new Thread(() -> {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             context.destroy();
             try {
                 applicationContextClassLoader.close();

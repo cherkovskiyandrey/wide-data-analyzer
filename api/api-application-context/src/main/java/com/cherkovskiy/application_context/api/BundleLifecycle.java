@@ -12,7 +12,7 @@ public interface BundleLifecycle {
      *
      * @param bundleNameVersion
      */
-    default void beforeInit(@Nonnull BundleVersion bundleNameVersion, @Nonnull ConfigurableConfiguration configurableConfiguration) {
+    default void beforeInit(@Nonnull BundleVersion bundleNameVersion, @Nonnull BundleContext bundleContext) {
     }
 
     /**

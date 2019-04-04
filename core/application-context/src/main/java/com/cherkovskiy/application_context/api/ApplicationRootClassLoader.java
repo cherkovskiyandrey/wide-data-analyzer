@@ -1,5 +1,7 @@
 package com.cherkovskiy.application_context.api;
 
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
+
 import javax.annotation.Nonnull;
 import java.util.Collection;
 

@@ -5,6 +5,10 @@ import com.cherkovskiy.application_context.api.BundleVersion;
 import javax.annotation.Nonnull;
 
 public class BundleVersionImpl implements BundleVersion {
+    public BundleVersionImpl(@Nonnull String fullVersion) {
+        //todo
+    }
+
     @Override
     public int getMajor() {
         throw new UnsupportedOperationException("It is not supported yet.");
@@ -23,5 +27,15 @@ public class BundleVersionImpl implements BundleVersion {
     @Nonnull
     public static BundleVersion valueOf(@Nonnull String versionString) {
         //todo
+    }
+
+    @Override
+    public int compareTo(@Nonnull BundleVersion bundleVersion) {
+        //todo
+    }
+
+    @Override
+    public String toString() {
+        return "BundleVersionImpl{}";
     }
 }

@@ -1,4 +1,4 @@
-package com.cherkovskiy.application_context.api;
+package com.cherkovskiy.application_context.api.bundles;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

@@ -1,9 +1,9 @@
-package com.cherkovskiy.gradle.plugin;
+package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.application_context.api.Dependency;
-import com.cherkovskiy.application_context.api.ResolvedBundleArtifact;
-import com.cherkovskiy.application_context.api.ResolvedDependency;
-import com.cherkovskiy.application_context.api.ServiceDescriptor;
+import com.cherkovskiy.application_context.api.bundles.Dependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
+import com.cherkovskiy.application_context.api.bundles.ServiceDescriptor;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 

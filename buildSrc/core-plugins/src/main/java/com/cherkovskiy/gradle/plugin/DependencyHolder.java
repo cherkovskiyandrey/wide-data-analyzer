@@ -1,6 +1,6 @@
 package com.cherkovskiy.gradle.plugin;
 
-import com.cherkovskiy.application_context.api.ResolvedDependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 

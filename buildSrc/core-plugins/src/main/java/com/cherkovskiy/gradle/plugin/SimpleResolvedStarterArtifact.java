@@ -1,8 +1,8 @@
 package com.cherkovskiy.gradle.plugin;
 
-import com.cherkovskiy.application_context.api.Dependency;
-import com.cherkovskiy.application_context.api.ResolvedDependency;
-import com.cherkovskiy.application_context.api.ResolvedStarterArtifact;
+import com.cherkovskiy.application_context.api.bundles.Dependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedStarterArtifact;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 

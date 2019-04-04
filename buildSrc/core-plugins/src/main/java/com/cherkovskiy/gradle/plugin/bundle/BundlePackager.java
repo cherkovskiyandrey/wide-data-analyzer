@@ -2,8 +2,8 @@ package com.cherkovskiy.gradle.plugin.bundle;
 
 import com.cherkovskiy.application_context.ManifestArtifact;
 import com.cherkovskiy.application_context.ManifestServiceDescriptor;
-import com.cherkovskiy.application_context.api.ResolvedDependency;
-import com.cherkovskiy.application_context.api.ServiceDescriptor;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
+import com.cherkovskiy.application_context.api.bundles.ServiceDescriptor;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
 import com.cherkovskiy.application_context.BundleDependencyGroup;

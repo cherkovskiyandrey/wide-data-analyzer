@@ -1,7 +1,7 @@
 package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.application_context.api.Dependency;
-import com.cherkovskiy.application_context.api.ResolvedDependency;
+import com.cherkovskiy.application_context.api.bundles.Dependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;

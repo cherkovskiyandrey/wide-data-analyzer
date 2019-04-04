@@ -2,7 +2,7 @@ package com.cherkovskiy.gradle.plugin;
 
 import com.cherkovskiy.application_context.ManifestServiceDescriptor;
 import com.cherkovskiy.application_context.api.annotations.Service;
-import com.cherkovskiy.application_context.api.ServiceDescriptor;
+import com.cherkovskiy.application_context.api.bundles.ServiceDescriptor;
 import org.junit.Test;
 
 import java.io.IOException;

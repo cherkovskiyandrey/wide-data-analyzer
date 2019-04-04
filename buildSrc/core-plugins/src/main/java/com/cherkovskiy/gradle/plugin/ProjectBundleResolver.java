@@ -1,8 +1,14 @@
 package com.cherkovskiy.gradle.plugin;
 
-import com.cherkovskiy.application_context.api.*;
+import com.cherkovskiy.application_context.BundleResolver;
+import com.cherkovskiy.application_context.ResolvedBundleFile;
+import com.cherkovskiy.application_context.api.bundles.BundleArtifact;
+import com.cherkovskiy.application_context.api.bundles.Dependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
 import com.google.common.collect.Sets;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,7 +24,8 @@ public class ProjectBundleResolver implements BundleResolver {
     }
 
     @Override
-    public ResolvedBundleArtifact resolve(BundleArtifact artifact) {
+    @Nonnull
+    public ResolvedBundleArtifact resolve(@Nonnull BundleArtifact artifact) {
         return ResolvedBundleFile.builder()
                 .setName(artifact.getName())
                 .setVersion(artifact.getVersion())

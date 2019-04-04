@@ -1,8 +1,8 @@
 package com.cherkovskiy.gradle.plugin.application;
 
 import com.cherkovskiy.application_context.StarterDependencyGroup;
-import com.cherkovskiy.application_context.api.ResolvedDependency;
-import com.cherkovskiy.application_context.api.ResolvedStarterArtifact;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedStarterArtifact;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
 import com.google.common.io.Files;

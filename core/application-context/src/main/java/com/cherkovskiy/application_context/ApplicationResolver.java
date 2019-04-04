@@ -1,16 +1,8 @@
 package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.application_context.api.BundleArtifact;
-import com.cherkovskiy.application_context.api.BundleResolver;
-import com.cherkovskiy.application_context.api.ResolvedBundleArtifact;
+import com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 //todo

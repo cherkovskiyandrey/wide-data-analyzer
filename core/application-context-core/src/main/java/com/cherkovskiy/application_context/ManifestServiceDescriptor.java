@@ -1,6 +1,6 @@
 package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.application_context.api.ServiceDescriptor;
+import com.cherkovskiy.application_context.api.bundles.ServiceDescriptor;
 import com.cherkovskiy.application_context.api.annotations.Service;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;

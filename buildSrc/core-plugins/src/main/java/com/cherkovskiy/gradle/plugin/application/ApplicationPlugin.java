@@ -1,10 +1,10 @@
 package com.cherkovskiy.gradle.plugin.application;
 
 import com.cherkovskiy.gradle.plugin.ProjectEvaluatedListener;
-import com.cherkovskiy.application_context.api.Dependency;
-import com.cherkovskiy.application_context.api.ResolvedBundleArtifact;
-import com.cherkovskiy.application_context.api.ResolvedDependency;
-import com.cherkovskiy.application_context.api.ResolvedStarterArtifact;
+import com.cherkovskiy.application_context.api.bundles.Dependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedStarterArtifact;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePackagerConfiguration;
 import com.cherkovskiy.gradle.plugin.bundle.BundlePlugin;
 import com.google.common.base.Joiner;

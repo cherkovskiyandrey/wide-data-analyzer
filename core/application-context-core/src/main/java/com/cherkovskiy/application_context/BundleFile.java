@@ -1,8 +1,8 @@
 package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.application_context.api.BundleArtifact;
-import com.cherkovskiy.application_context.api.Dependency;
-import com.cherkovskiy.application_context.api.ServiceDescriptor;
+import com.cherkovskiy.application_context.api.bundles.BundleArtifact;
+import com.cherkovskiy.application_context.api.bundles.Dependency;
+import com.cherkovskiy.application_context.api.bundles.ServiceDescriptor;
 import com.cherkovskiy.vfs.DirectoryFactory;
 import com.cherkovskiy.vfs.zip.JarDirectoryAdapter;
 import com.google.common.collect.ImmutableMap;

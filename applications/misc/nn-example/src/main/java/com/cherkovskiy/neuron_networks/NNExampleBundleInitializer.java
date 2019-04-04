@@ -1,8 +1,8 @@
 package com.cherkovskiy.neuron_networks;
 
+import com.cherkovskiy.application_context.api.BundleContext;
 import com.cherkovskiy.application_context.api.BundleLifecycle;
 import com.cherkovskiy.application_context.api.BundleVersion;
-import com.cherkovskiy.application_context.api.configuration.ConfigurableConfiguration;
 import com.cherkovskiy.application_context.configuration.sources.MapPropertySource;
 import com.cherkovskiy.application_context.configuration.sources.PropertiesFile;
 import com.google.common.collect.ImmutableMap;
@@ -18,23 +18,22 @@ public class NNExampleBundleInitializer implements BundleLifecycle {
      * example how to add bundle custom properties or overload current
      *
      * @param bundleNameVersion
-     * @param configurableConfiguration
      */
     @Override
-    public void beforeInit(@Nonnull BundleVersion bundleNameVersion, @Nonnull ConfigurableConfiguration configurableConfiguration) {
+    public void beforeInit(@Nonnull BundleVersion bundleNameVersion, @Nonnull BundleContext bundleContext) {
         //Set global properties.
-        boolean hasLogDir = StreamSupport.stream(configurableConfiguration.getGlobalPropertySources().spliterator(), false)
+        boolean hasLogDir = StreamSupport.stream(bundleContext.getConfigurableConfiguration().getGlobalPropertySources().spliterator(), false)
                 .anyMatch(propertiesSource -> propertiesSource.containsProperty("global.log_dir"));
 
         if (!hasLogDir) {
-            configurableConfiguration.getGlobalPropertySources().addFirst(new MapPropertySource("Overloaded", ImmutableMap.of(
+            bundleContext.getConfigurableConfiguration().getGlobalPropertySources().addFirst(new MapPropertySource("Overloaded", ImmutableMap.of(
                     "global.log_dir",
                     new File(".").getAbsolutePath()
             )));
         }
 
         //or: set local properties
-        configurableConfiguration.getPropertySources().addLast(
+        bundleContext.getConfigurableConfiguration().getPropertySources().addLast(
                 new PropertiesFile("NNProperties", "neuralNetwork.properties")
         );
     }

@@ -1,6 +1,13 @@
 package com.cherkovskiy.application_context;
 
-import com.cherkovskiy.application_context.api.*;
+import com.cherkovskiy.application_context.api.ApplicationRootClassLoader;
+import com.cherkovskiy.application_context.api.Bundle;
+import com.cherkovskiy.application_context.api.BundleLifecycle;
+import com.cherkovskiy.application_context.api.BundleManagerProvider;
+import com.cherkovskiy.application_context.api.bundles.Dependency;
+import com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact;
+import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
+import com.cherkovskiy.application_context.api.bundles.ServiceDescriptor;
 import com.cherkovskiy.application_context.api.configuration.ConfigurableConfiguration;
 import com.cherkovskiy.application_context.api.configuration.ConfigurationContext;
 import com.cherkovskiy.application_context.configuration.ConfigurableConfigurationProxy;
@@ -13,6 +20,7 @@ import com.google.common.collect.Sets;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,18 +39,26 @@ class LocalBundle implements Bundle {
     private final ConfigurationContext configurationContext;
     @Nonnull
     private final ConfigurableConfiguration configurableConfiguration;
-
+    @Nonnull
+    private final BundleContextImpl bundleContext;
 
     LocalBundle(
             @Nonnull ResolvedBundleArtifact resolvedBundleArtifact,
             @Nonnull ApplicationRootClassLoader rootClassLoader,
-            @Nonnull ConfigurationImpl localConfiguration) {
+            @Nonnull ConfigurationImpl globalConfiguration,
+            @Nonnull ConcurrentMap<String, BundleManagerProvider> bundleManagerProviders,
+            @Nonnull BundleManagerProvider.Listener bundleManagerListener) {
         this.resolvedBundleArtifact = resolvedBundleArtifact;
         this.rootClassLoader = rootClassLoader;
-        this.localConfiguration = StandardConfiguration.createLocalConfiguration(localConfiguration);
+        this.localConfiguration = StandardConfiguration.createLocalConfiguration(globalConfiguration);
         this.bundleClassLoader = new BundleClassLoader(rootClassLoader.getUnderlyingClassLoader());
         this.configurationContext = new ConfigurationContextProxy(this.localConfiguration);
         this.configurableConfiguration = new ConfigurableConfigurationProxy(this.localConfiguration);
+        this.bundleContext = new BundleContextImpl(
+                configurableConfiguration,
+                bundleManagerProviders,
+                bundleManagerListener
+        );
     }
 
     @Override
@@ -79,7 +95,7 @@ class LocalBundle implements Bundle {
                 Class<? extends BundleLifecycle> bundleLifecycleClass = (Class<? extends BundleLifecycle>) starterClass;
                 BundleLifecycle bundleLifecycleBean = bundleLifecycleClass.newInstance();
 
-                bundleLifecycleBean.beforeInit(BundleVersionImpl.valueOf(resolvedBundleArtifact.getVersion()), configurableConfiguration);
+                bundleLifecycleBean.beforeInit(BundleVersionImpl.valueOf(resolvedBundleArtifact.getVersion()), bundleContext);
                 //todo: refresh всем конфигурационным контекстам во всех уже загруженных бандлах
             }
         } catch (Exception e) {
