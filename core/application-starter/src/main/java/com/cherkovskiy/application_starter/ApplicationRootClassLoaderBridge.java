@@ -1,9 +1,11 @@
 package com.cherkovskiy.application_starter;
 
 import com.cherkovskiy.application_context.api.ApplicationRootClassLoader;
+import com.cherkovskiy.application_context.api.ClassesProvider;
 import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 
 class ApplicationRootClassLoaderBridge implements ApplicationRootClassLoader {
@@ -20,5 +22,17 @@ class ApplicationRootClassLoaderBridge implements ApplicationRootClassLoader {
     @Override
     public ClassLoader getUnderlyingClassLoader() {
         return null;
+    }
+
+    @Nullable
+    @Override
+    public ResolvedDependency getArtifactByClass(@Nonnull String className) {
+        //todo
+    }
+
+    @Nonnull
+    @Override
+    public Collection<String> getAllVersionOfClass(@Nonnull String className) {
+        //todo
     }
 }

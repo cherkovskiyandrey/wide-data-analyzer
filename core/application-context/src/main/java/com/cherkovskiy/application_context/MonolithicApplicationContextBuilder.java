@@ -80,6 +80,7 @@ public class MonolithicApplicationContextBuilder implements ContextBuilder {
         //List<Bundle> remoteBundle = //TODO
 
         return new MonolithicApplicationContext(
+                rootClassLoader,
                 appBundle,
                 localBundles,
                 globalConfiguration,

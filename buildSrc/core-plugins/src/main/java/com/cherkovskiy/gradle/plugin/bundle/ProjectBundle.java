@@ -164,6 +164,11 @@ class ProjectBundle implements ResolvedBundleArtifact {
     }
 
     @Override
+    public int reloadNumber() {
+        return 0;
+    }
+
+    @Override
     public boolean isEmbedded() {
         return embeddedDependencies;
     }

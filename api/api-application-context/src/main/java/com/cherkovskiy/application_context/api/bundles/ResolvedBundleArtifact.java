@@ -14,6 +14,14 @@ public interface ResolvedBundleArtifact {
     @Nonnull
     String getVersion();
 
+    /**
+     * Used for runtime bundle reloading.
+     *
+     *
+     * @return
+     */
+    int reloadNumber();
+
     boolean isEmbedded();
 
     @Nonnull

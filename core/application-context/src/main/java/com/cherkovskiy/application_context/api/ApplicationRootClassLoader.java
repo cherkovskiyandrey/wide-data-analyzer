@@ -5,7 +5,7 @@ import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 
-public interface ApplicationRootClassLoader {
+public interface ApplicationRootClassLoader extends ClassesProvider {
 
     /**
      * For external jars - just check version - it prohibited to change.

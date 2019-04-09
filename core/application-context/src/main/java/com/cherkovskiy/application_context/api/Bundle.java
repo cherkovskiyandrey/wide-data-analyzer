@@ -1,8 +1,11 @@
 package com.cherkovskiy.application_context.api;
 
 import com.cherkovskiy.application_context.BundleVersionName;
+import com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact;
 import com.cherkovskiy.application_context.api.bundles.ServiceDescriptor;
+import com.cherkovskiy.application_context.api.exceptions.BundleReloadException;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Set;
 
@@ -14,6 +17,11 @@ public interface Bundle {
      * Load bundle
      */
     void load();
+
+    /**
+     * Reload
+     */
+    void reload(@Nonnull ResolvedBundleArtifact resolvedBundleArtifact) throws BundleReloadException;
 
     /**
      * Unload

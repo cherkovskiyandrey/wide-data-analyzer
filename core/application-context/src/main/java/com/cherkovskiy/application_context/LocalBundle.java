@@ -10,6 +10,7 @@ import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
 import com.cherkovskiy.application_context.api.bundles.ServiceDescriptor;
 import com.cherkovskiy.application_context.api.configuration.ConfigurableConfiguration;
 import com.cherkovskiy.application_context.api.configuration.ConfigurationContext;
+import com.cherkovskiy.application_context.api.exceptions.BundleReloadException;
 import com.cherkovskiy.application_context.configuration.ConfigurableConfigurationProxy;
 import com.cherkovskiy.application_context.configuration.ConfigurationContextProxy;
 import com.cherkovskiy.application_context.configuration.environments.ConfigurationImpl;
@@ -62,6 +63,11 @@ class LocalBundle implements Bundle {
     }
 
     @Override
+    public BundleVersionName getId() {
+        //todo
+    }
+
+    @Override
     public void load() {
         try {
             // Register api dependencies
@@ -101,6 +107,14 @@ class LocalBundle implements Bundle {
         } catch (Exception e) {
             throw new BundleLoadException(e);
         }
+    }
+
+    @Override
+    public void reload(@Nonnull ResolvedBundleArtifact resolvedBundleArtifact) throws BundleReloadException {
+        //todo: смотрим на вресию текущую и та что на входе, если равны то на com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact.reloadNumber
+        // , и для тех артефактов для которых версия на входе или reloadNumber больше - загружаем их в rootClassLoader,
+        // так же перегружаем само тело бандла - создаём новый класс лоадер bundleClassLoader
+        //TODO: отдельно потом разобраться с сервисами, прокси на них, рефреш евентом и далее по спеке
     }
 
     @Override

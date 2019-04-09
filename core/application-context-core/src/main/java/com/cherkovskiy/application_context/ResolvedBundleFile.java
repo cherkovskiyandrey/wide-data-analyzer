@@ -52,6 +52,11 @@ public class ResolvedBundleFile implements ResolvedBundleArtifact {
     }
 
     @Override
+    public int reloadNumber() {
+        return 0;
+    }
+
+    @Override
     public boolean isEmbedded() {
         return isEmbedded;
     }
