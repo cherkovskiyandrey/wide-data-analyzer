@@ -28,6 +28,8 @@ public interface Bundle {
      */
     void unload();
 
+    boolean isLoaded();
+
     /**
      * @return true for remote bundles and false for local
      */

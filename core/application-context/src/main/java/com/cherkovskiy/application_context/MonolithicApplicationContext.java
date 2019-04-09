@@ -31,7 +31,7 @@ class MonolithicApplicationContext implements ApplicationContext, BundleManagerP
     private final ConfigurationImpl globalConfiguration;
     @Nonnull
     private final ConcurrentMap<String, BundleManagerProvider> bundleManagerProviders;
-    private final Object reloadLock = new Object();
+    private final Object loadLock = new Object();
 
     MonolithicApplicationContext(
             @Nonnull ApplicationRootClassLoader rootClassLoader,
@@ -50,9 +50,12 @@ class MonolithicApplicationContext implements ApplicationContext, BundleManagerP
 
     public void init() {
         // App bundle load first and eager
-        appBundle.load();
-        Set<ServiceDescriptor> appBundleServices = appBundle.getServices();
+        synchronized (loadLock) {
+            appBundle.load();
+        }
 
+
+        Set<ServiceDescriptor> appBundleServices = appBundle.getServices();
         //todo: закидываем всё в граф, и дальше по спеке
     }
 
@@ -124,14 +127,14 @@ class MonolithicApplicationContext implements ApplicationContext, BundleManagerP
             throw new BundleReloadException(format("Bundle %s outside of distributive and could not be reloaded.", newBundleVersionName));
         }
 
-        synchronized (reloadLock) {
+        synchronized (loadLock) {
             Bundle bundle = localBundles.get(name);
             if (bundle.getId().compareTo(newBundleVersionName) < 0) {
                 throw new BundleReloadException(format("Bundle %s has incompatible version. Version has to be equals or higher a current one: %s.", newBundleVersionName, bundle));
             }
 
             ApplicationResolver applicationResolver = new ApplicationResolver(System.getenv("APP_HOME"));
-            ResolvedBundleArtifact resolvedOrigBundle = applicationResolver.resolveOutSideBundle(bundleFile);
+            ResolvedBundleArtifact resolvedOrigBundle = applicationResolver.resolveOutsideBundle(bundleFile);
 
             BundleCompiler bundleCompiler = new BundleCompiler(rootClassLoader);
             final ResolvedBundleArtifact patchedBundle;

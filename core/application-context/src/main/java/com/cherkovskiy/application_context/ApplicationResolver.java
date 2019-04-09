@@ -13,13 +13,27 @@ import java.util.List;
 
 //todo: для Володи. Написать спеку что нужно сделать
 class ApplicationResolver {
+
+
+    //TODO: в первую очередь нам нужно написать свою имплементацию резолвера BundleResolver
+    //сейчас уже есть 2 имплементации EmbeddedResolver и ProjectBundleResolver - они используются во время сборки проекта.
+    // А тут рантайм. У нас есть устоявшеяся структура каталогов приложения (ApplicationDirectories), этот резолвер должен работать с ней.
+    // Логика резолвинга так же простая и схожа с ProjectBundleResolver, так же используем ResolvedBundleFile.builder(),
+    // только все зависимости берём из наших каталогов ApplicationDirectories.
+    // Позже напишу дизайн по резолвингу перегруженных бандлов.
     //private final BundleResolver bundleResolver = new ApplicationBundleResolver(appHome);
     ApplicationResolver(String appHome) {
 
     }
 
+    /**
+     * Return resolved main application bundle.
+     *
+     * @return
+     */
     public ResolvedBundleArtifact resolveApplicationBundle() {
         throw new UnsupportedOperationException("It is not supported yet.");
+
 //        File appBundleFile = Paths.get(appHome, ApplicationDirectories.APP.getPath()).toFile();
 //        BundleArtifact appBundleArtifact = new BundleFile(appBundleFile);
 //        return bundleResolver.resolve(appBundleArtifact);
@@ -44,18 +58,8 @@ class ApplicationResolver {
 //        bundles.stream().map(bundleResolver::resolve).collect(Collectors.toList());
     }
 
+    //todo: разложить артефакты в соответсвующие каталоги. Продумать структуру каталогов для перегруженных бандлов.
     public void addReloadedBundle(@Nonnull ResolvedBundleArtifact bundleFile) throws BundleReloadException {
-        //todo: разложить артефакты в соответсвующие каталоги
-//
-//        final BundleResolver resolver;
-//        if (bundleFile.isEmbedded()) {
-//            //todo: special direcory where budle will be unpacked
-//            final File bundleUnpackDir = new File(baseTmpDir, bundleFile.getName());
-//            FileUtils.forceMkdir(bundleUnpackDir);
-//            resolver = new EmbeddedResolver(bundleUnpackDir);
-//        } else {
-//            resolver = new ProjectBundleResolver(Lists.newArrayList(dependencies));
-//        }
     }
 
     /**
@@ -85,19 +89,8 @@ class ApplicationResolver {
      * @param bundleFile
      * @return
      */
-    public ResolvedBundleArtifact resolveOutSideBundle(@Nonnull BundleArtifact bundleFile) {
-        //todo
+    public ResolvedBundleArtifact resolveOutsideBundle(@Nonnull BundleArtifact bundleFile) {
         //todo: скопировать файл в спец каталог, разрезолвить его если он embeded или нет - используя текущий енв, если не получилось - исключение
-
-        final BundleResolver resolver;
-        if (bundleFile.isEmbedded()) {
-            //todo: special direcory where budle will be unpacked
-            final File bundleUnpackDir = new File(baseTmpDir, bundleFile.getName());
-            FileUtils.forceMkdir(bundleUnpackDir);
-            resolver = new EmbeddedResolver(bundleUnpackDir);
-        } else {
-            resolver = new ProjectBundleResolver(Lists.newArrayList(dependencies));
-        }
     }
 
     public void removeReloadedBundle(@Nonnull ResolvedBundleArtifact patchedBundle) {
