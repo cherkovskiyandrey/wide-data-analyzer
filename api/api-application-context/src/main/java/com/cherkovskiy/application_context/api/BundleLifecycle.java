@@ -1,7 +1,5 @@
 package com.cherkovskiy.application_context.api;
 
-import com.cherkovskiy.application_context.api.configuration.ConfigurableConfiguration;
-
 import javax.annotation.Nonnull;
 
 
@@ -28,6 +26,6 @@ public interface BundleLifecycle {
      *
      * @param bundleNameVersion
      */
-    default void beforeDestroy(@Nonnull BundleVersion bundleNameVersion) {
+    default void beforeDestroy(@Nonnull BundleVersion bundleNameVersion, boolean isReload) {
     }
 }

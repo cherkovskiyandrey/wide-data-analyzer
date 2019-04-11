@@ -43,12 +43,11 @@ class LocalBundle implements Bundle {
     @Nonnull
     private final BundleContextImpl bundleContext;
 
-    LocalBundle(
-            @Nonnull ResolvedBundleArtifact resolvedBundleArtifact,
-            @Nonnull ApplicationRootClassLoader rootClassLoader,
-            @Nonnull ConfigurationImpl globalConfiguration,
-            @Nonnull ConcurrentMap<String, BundleManagerProvider> bundleManagerProviders,
-            @Nonnull BundleManagerProvider.Listener bundleManagerListener) {
+    LocalBundle(@Nonnull ResolvedBundleArtifact resolvedBundleArtifact,
+                @Nonnull ApplicationRootClassLoader rootClassLoader,
+                @Nonnull ConfigurationImpl globalConfiguration,
+                @Nonnull ConcurrentMap<String, BundleManagerProvider> bundleManagerProviders,
+                @Nonnull BundleManagerProvider.Listener bundleManagerListener) {
         this.resolvedBundleArtifact = resolvedBundleArtifact;
         this.rootClassLoader = rootClassLoader;
         this.localConfiguration = StandardConfiguration.createLocalConfiguration(globalConfiguration);

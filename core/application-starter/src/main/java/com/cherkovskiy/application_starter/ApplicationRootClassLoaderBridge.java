@@ -1,7 +1,6 @@
 package com.cherkovskiy.application_starter;
 
 import com.cherkovskiy.application_context.api.ApplicationRootClassLoader;
-import com.cherkovskiy.application_context.api.ClassesProvider;
 import com.cherkovskiy.application_context.api.bundles.ResolvedDependency;
 
 import javax.annotation.Nonnull;
