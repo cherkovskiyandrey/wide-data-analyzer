@@ -11,11 +11,13 @@ public class BundleVersionName implements Comparable<BundleVersionName> {
     //todo
 
     public String getName() {
-//todo
+        //todo
+        throw new UnsupportedOperationException("TODO");
     }
 
     public BundleVersion getVersion() {
         //todo
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Override
@@ -26,5 +28,6 @@ public class BundleVersionName implements Comparable<BundleVersionName> {
     @Override
     public int compareTo(@Nonnull BundleVersionName bundleVersionName) {
         //todo
+        throw new UnsupportedOperationException("TODO");
     }
 }

@@ -10,6 +10,7 @@ public class BundleCompiler {
 
     public BundleCompiler(@Nonnull ClassesProvider classesProvider) {
         //todo
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
 
     /**
@@ -24,5 +25,6 @@ public class BundleCompiler {
     @Nonnull
     public ResolvedBundleArtifact compile(@Nonnull ResolvedBundleArtifact origBundle) throws CompileException {
         //todo
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
 }

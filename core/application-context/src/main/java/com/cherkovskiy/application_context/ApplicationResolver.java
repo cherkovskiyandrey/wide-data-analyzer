@@ -71,7 +71,7 @@ class ApplicationResolver {
      * @return
      */
     public List<ResolvedBundleArtifact> getBundles(@Nonnull BundleVersionName bundleVersionName) {
-        //todo
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
 
     /**
@@ -91,6 +91,7 @@ class ApplicationResolver {
      */
     public ResolvedBundleArtifact resolveOutsideBundle(@Nonnull BundleArtifact bundleFile) {
         //todo: скопировать файл в спец каталог, разрезолвить его если он embeded или нет - используя текущий енв, если не получилось - исключение
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
 
     public void removeReloadedBundle(@Nonnull ResolvedBundleArtifact patchedBundle) {

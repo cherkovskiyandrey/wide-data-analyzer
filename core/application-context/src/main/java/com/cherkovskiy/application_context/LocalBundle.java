@@ -64,6 +64,7 @@ class LocalBundle implements Bundle {
     @Override
     public BundleVersionName getId() {
         //todo
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Override
@@ -119,6 +120,12 @@ class LocalBundle implements Bundle {
     @Override
     public void unload() {
         //todo
+    }
+
+    @Override
+    public boolean isLoaded() {
+        //todo
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Override

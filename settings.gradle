@@ -1,6 +1,6 @@
 import groovy.io.FileType
 
-enableFeaturePreview('IMPROVED_POM_SUPPORT')
+//enableFeaturePreview('IMPROVED_POM_SUPPORT')
 rootProject.name = 'wide-data-analyzer'
 
 //------- API -----------------------
@@ -42,3 +42,5 @@ new File(new File(rootProject.projectDir, "applications"), "utils").traverse([ty
         include ":applications:utils:${dir.name}"
     }
 }
+
+include ":core:application-context-core"

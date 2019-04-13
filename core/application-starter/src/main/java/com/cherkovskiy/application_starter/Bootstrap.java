@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -42,18 +43,18 @@ public class Bootstrap {
             starterManifest = new Manifest(manifestInputStream);
         }
 
-        List<URL> starterApiDependencies = getURLs(starterManifest.getMainAttributes().getValue("WDA-LauncherProxy-Api-Dependencies"), appHome);
-        List<URL> starterCommonDependencies = getURLs(starterManifest.getMainAttributes().getValue("WDA-LauncherProxy-Common-Dependencies"), appHome);
+        List<URL> starterApiDependencies = getURLs(starterManifest.getMainAttributes().getValue("WDA-Starter-Api-Dependencies"), appHome);
+        List<URL> starterCommonDependencies = getURLs(starterManifest.getMainAttributes().getValue("WDA-Starter-Common-Dependencies"), appHome);
 
         final ApplicationRootClassLoaderSkeleton applicationBootstrapClassLoader = new ApplicationRootClassLoaderSkeleton(
-                Stream.concat(starterApiDependencies.stream(), starterCommonDependencies.stream()).toArray(URL[]::new),
+                Stream.concat(starterApiDependencies.stream(), starterCommonDependencies.stream()).collect(Collectors.toList()),
                 ClassLoader.getSystemClassLoader()
         );
 
         URL starter = Bootstrap.class.getProtectionDomain().getCodeSource().getLocation();
-        List<URL> internalDependencies = getURLs(starterManifest.getMainAttributes().getValue("WDA-LauncherProxy-Internal-Dependencies"), appHome);
+        List<URL> internalDependencies = getURLs(starterManifest.getMainAttributes().getValue("WDA-Starter-Internal-Dependencies"), appHome);
         internalDependencies.add(starter);
-        List<URL> _3rdPartyDependencies = getURLs(starterManifest.getMainAttributes().getValue("WDA-LauncherProxy-3rdParty-Dependencies"), appHome);
+        List<URL> _3rdPartyDependencies = getURLs(starterManifest.getMainAttributes().getValue("WDA-Starter-3rdParty-Dependencies"), appHome);
 
         final ApplicationContextClassLoader applicationContextClassLoader = new ApplicationContextClassLoader(
                 Stream.concat(internalDependencies.stream(), _3rdPartyDependencies.stream()).toArray(URL[]::new),

@@ -27,11 +27,13 @@ public class BundleVersionImpl implements BundleVersion {
     @Nonnull
     public static BundleVersion valueOf(@Nonnull String versionString) {
         //todo
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Override
     public int compareTo(@Nonnull BundleVersion bundleVersion) {
         //todo
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Override

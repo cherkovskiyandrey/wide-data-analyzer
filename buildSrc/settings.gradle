@@ -1,4 +1,4 @@
-enableFeaturePreview('IMPROVED_POM_SUPPORT')
+//enableFeaturePreview('IMPROVED_POM_SUPPORT')
 
 //------- Gradle plugins -----------------------
 include ":core-plugins"

@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.String.format;
 
-class MonolithicApplicationContext implements ApplicationContext, BundleManagerProvider.Listener {
+public class MonolithicApplicationContext implements ApplicationContext, BundleManagerProvider.Listener {
     @Nonnull
     private final ApplicationRootClassLoader rootClassLoader;
     @Nonnull

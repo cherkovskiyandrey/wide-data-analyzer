@@ -10,11 +10,12 @@ import java.util.Collection;
 class ApplicationRootClassLoaderBridge implements ApplicationRootClassLoader {
     public ApplicationRootClassLoaderBridge(@Nonnull ApplicationRootClassLoaderSkeleton applicationRootClassLoaderSkeleton) {
         //todo
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
 
     @Override
     public void updateClasses(@Nonnull Collection<ResolvedDependency> dependencies) {
-
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
 
     @Nonnull
@@ -26,12 +27,12 @@ class ApplicationRootClassLoaderBridge implements ApplicationRootClassLoader {
     @Nullable
     @Override
     public ResolvedDependency getArtifactByClass(@Nonnull String className) {
-        //todo
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
 
     @Nonnull
     @Override
     public Collection<String> getAllVersionOfClass(@Nonnull String className) {
-        //todo
+        throw new UnsupportedOperationException("It is not supported yet.");
     }
 }
