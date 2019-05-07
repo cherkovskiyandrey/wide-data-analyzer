@@ -7,6 +7,7 @@ allprojects {
         mavenCentral()
     }
 
+    apply plugin: 'idea'
     apply plugin: 'java-library'
     apply plugin: 'common-validator'
 

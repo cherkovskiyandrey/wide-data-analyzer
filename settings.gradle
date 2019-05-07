@@ -36,11 +36,11 @@ new File(new File(rootProject.projectDir, "applications"), "misc").traverse([typ
 }
 
 //----------- Applications utils -----------
-new File(new File(rootProject.projectDir, "applications"), "utils").traverse([type    : FileType.DIRECTORIES,
-                                                                              maxDepth: 0]) { dir ->
-    if (new File(dir, "build.gradle").exists()) {
-        include ":applications:utils:${dir.name}"
+if (new File(new File(rootProject.projectDir, "applications"), "utils").exists()) {
+    new File(new File(rootProject.projectDir, "applications"), "utils").traverse([type    : FileType.DIRECTORIES,
+                                                                                  maxDepth: 0]) { dir ->
+        if (new File(dir, "build.gradle").exists()) {
+            include ":applications:utils:${dir.name}"
+        }
     }
 }
-
-include ":core:application-context-core"

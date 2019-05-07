@@ -67,6 +67,12 @@ class LocalBundle implements Bundle {
         throw new UnsupportedOperationException("TODO");
     }
 
+    @Nonnull
+    @Override
+    public ResolvedBundleArtifact getCurrentArtifact() {
+        return resolvedBundleArtifact;
+    }
+
     @Override
     public void load() {
         try {
@@ -111,7 +117,8 @@ class LocalBundle implements Bundle {
 
     @Override
     public void reload(@Nonnull ResolvedBundleArtifact resolvedBundleArtifact) throws BundleReloadException {
-        //todo: смотрим на вресию текущую и та что на входе, если равны то на com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact.reloadNumber
+        //todo: смотрим на версию текущую и та что на входе, если равны то на
+        // com.cherkovskiy.application_context.api.bundles.ResolvedBundleArtifact.reloadNumber
         // , и для тех артефактов для которых версия на входе или reloadNumber больше - загружаем их в rootClassLoader,
         // так же перегружаем само тело бандла - создаём новый класс лоадер bundleClassLoader
         //TODO: отдельно потом разобраться с сервисами, прокси на них, рефреш евентом и далее по спеке

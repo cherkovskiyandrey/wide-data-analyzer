@@ -80,7 +80,7 @@ public class BundleFile implements BundleArtifact {
     @Nullable
     @Override
     public String getStarter() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Nonnull

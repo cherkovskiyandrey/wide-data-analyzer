@@ -7,7 +7,6 @@ import com.cherkovskiy.application_context.api.exceptions.BundleReloadException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.InputStream;
 
 public class BundleManagerListenerDelegate implements BundleManagerProvider.Listener {
     @Nullable

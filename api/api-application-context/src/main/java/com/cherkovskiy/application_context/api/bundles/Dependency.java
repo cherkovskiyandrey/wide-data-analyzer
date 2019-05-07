@@ -23,6 +23,6 @@ public interface Dependency {
     }
 
     Comparator<? super Dependency> COMPARATOR = Comparator.comparing(Dependency::getGroup)
-            .thenComparing(Comparator.comparing(Dependency::getName))
-            .thenComparing(Comparator.comparing(Dependency::getVersion));
+            .thenComparing(Dependency::getName)
+            .thenComparing(Dependency::getVersion);
 }

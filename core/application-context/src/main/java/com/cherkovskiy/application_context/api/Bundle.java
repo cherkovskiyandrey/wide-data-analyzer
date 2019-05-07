@@ -13,6 +13,9 @@ public interface Bundle {
 
     BundleVersionName getId();
 
+    @Nonnull
+    ResolvedBundleArtifact getCurrentArtifact();
+
     /**
      * Load bundle
      */
@@ -38,7 +41,7 @@ public interface Bundle {
     /**
      * @return implemented services in this bundle if it is local bundle and null for remote
      */
-    @Nullable
+    @Nonnull
     Set<ServiceDescriptor> getServices();
 
 }
